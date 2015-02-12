@@ -1,2 +1,0 @@
-in_filelist Input/Files_MinBias.txt
-Output_File Output_MinBias.root

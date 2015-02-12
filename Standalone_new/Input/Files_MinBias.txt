@@ -1,1 +1,0 @@
-ROOT/NoiseTree_MinBias.root

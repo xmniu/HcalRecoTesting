@@ -1,2 +1,0 @@
-in_filelist Input/50ns_Files_Test.txt
-Output_File test.root

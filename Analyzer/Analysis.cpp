@@ -130,8 +130,7 @@ void Analysis::Process() {
   int nbytes = 0, nb = 0;
 
   for (int jentry=0; jentry<nentries;jentry++) {
- // for (int jentry=0; jentry<100000;jentry++) {
-    int ientry =(int) LoadTree(jentry);
+    //int ientry =(int) LoadTree(jentry);
     
     if(nevents%10==0) cout<<" "<<nevents<<"\t out of  "<<nentries<<"\t have already been processed ("<<round_nplaces((double)nevents/nentries*100,1)<<"%/100%)"<<endl;
 
@@ -141,7 +140,6 @@ void Analysis::Process() {
     MakeCutflow();
     FillHistograms();
   }
-
 
   TCanvas *c_tstot_hb_fit = new TCanvas("c_tstot_hb_fit");
   CHARGE_TSTOT_HB_FIT->GetXaxis()->SetTitle("Total Charge from Fit [fC]");
@@ -188,8 +186,6 @@ void Analysis::Process() {
  // c_t_he_fit->SetLogy();
   c_hlt_profile->SaveAs("hHLTResolution.png");
   
-  
-
   TCanvas *c_hlt_v_m2 = new TCanvas("c_hlt_v_m2");
   hCharge_Method2_v_HLT->GetXaxis()->SetTitle("Energy of M.2 Rechit [GeV]");
   hCharge_Method2_v_HLT->GetXaxis()->SetTitleSize(0.05);
@@ -204,143 +200,151 @@ void Analysis::Process() {
 void Analysis::DefineHistograms()
 {
   fout = new TFile(Output_File.c_str(), "RECREATE");
-
   
   // ---------------Plots for HLT ------------
-    RatioPulse = new TH2F("RatioPulse","TS5/TS4 vs TS45",20,0.,2.,100,0.,500.);
-    TimeSlewPulse = new TH2F("TimeSlewPulse","Time Slew vs TS45",25,-14.5,10.5,100,0.,500.);
-
-    Norm0 = new TH1F("fC0","Amplitude in Pulse ealier [fC]",100,0.,500.);
-    Norm1 = new TH1F("fC1","Amplitude in in-time Pulse [fC]",100,0.,500.);
-    Norm2 = new TH1F("fC2","Amplitude in Pulse later [fC]",100,0.,500.);
-
-//    Ped = new TH1F("ped","Pedestal [fC]",100,0.,10.);
-//    Time = new TH1F("time","Time [ns]",100,10.,25.);
-//    Chi2 = new TH1F("chisq","Chi2",100,0.,100.);
-
-    slewFit = new TF1("slewFit","pol4*expo(5)",-10.,14.);
-    slewFit->SetParameters(1.07618e-02,-4.19145e-06,2.70310e-05,-8.71584e-08,1.86597e-07,3.59216e+00,-1.02057e-01);
-
-    logtimeslewFit = new TF1("logtimeslewFit", "[0]+[1]*TMath::Log(x+[2])",0.,500.);
-    logtimeslewFit->SetParameters(3.89838e+01, -6.93560e+00, 8.52052e+01);
-
-    exptimeslewFit = new TF1("exptimeslewFit", "[0]+[1]*TMath::Exp([2]*x)",0.,500.);
-    exptimeslewFit->SetParameters(-2.69330e+00, 1.09162e+01, -7.60722e-03);
-
+  RatioPulse = new TH2F("RatioPulse","TS5/TS4 vs TS45",20,0.,2.,100,0.,500.);
+  TimeSlewPulse = new TH2F("TimeSlewPulse","Time Slew vs TS45",25,-14.5,10.5,100,0.,500.);
+  
+  Norm0 = new TH1F("fC0","Amplitude in Pulse ealier [fC]",100,0.,500.);
+  Norm1 = new TH1F("fC1","Amplitude in in-time Pulse [fC]",100,0.,500.);
+  Norm2 = new TH1F("fC2","Amplitude in Pulse later [fC]",100,0.,500.);
+  
+  slewFit = new TF1("slewFit","pol4*expo(5)",-10.,14.);
+  slewFit->SetParameters(1.07618e-02,-4.19145e-06,2.70310e-05,-8.71584e-08,1.86597e-07,3.59216e+00,-1.02057e-01);
     
+  logtimeslewFit = new TF1("logtimeslewFit", "[0]+[1]*TMath::Log(x+[2])",0.,500.);
+  logtimeslewFit->SetParameters(3.89838e+01, -6.93560e+00, 8.52052e+01);
+  
+  exptimeslewFit = new TF1("exptimeslewFit", "[0]+[1]*TMath::Exp([2]*x)",0.,500.);
+  exptimeslewFit->SetParameters(-2.69330e+00, 1.09162e+01, -7.60722e-03);
+  
   // Output Plots
-  hHLTResolution=new TProfile("hHLTResolution","",20,-0.5,99.5,0.,10.);
+  hHLTResolution=new TProfile("hHLTResolution","",20,0,100,-1.0,1.0);
   hCharge_Method2_v_HLT=new TH2D("hCharge_Method2_v_HLT","",50,0,250,50,0,250);
-
+  
   PULSE_ARRIVAL_HB_FIT=new TH1D("PULSE_ARRIVAL_HB_FIT","",50,-30.0,30.0);
   PULSE_ARRIVAL_HE_FIT=new TH1D("PULSE_ARRIVAL_HE_FIT","",50,-30.0,30.0);
 
   CHARGE_TSTOT_HB_FIT=new TH1D("CHARGE_TSTOT_HB_FIT","",150,0,1500);
   CHARGE_TSTOT_HE_FIT=new TH1D("CHARGE_TSTOT_HE_FIT","",150,0,1500);
 
-
-
 }
 
 void Analysis::MakeCutflow() 
 {
-  
-  // No longer needed... remove later
- // cut[0]=true;
- // cut[1]=true;
 
-//  if(cut[0]&&cut[1]){
-//    nevents_sel++;
-
-    for (int j = 0; j < (int)PulseCount; j++) {
-      //int Pass_Continue=false;
-            
-      // This should already have been set and I don't have an input method set up now
-      // but just arbitrarily put in things for the constraints at the moment
-      
-      // move these later if I need to
-      bool iPedestalConstraint = true;
-      bool iTimeConstraint = true;
-      bool iAddPulseJitter = false;
-      bool iUnConstrainedFit = false;
-      bool iApplyTimeSlew = true;
-      double iTS4Min = 5.;
-      double iTS4Max = 500.;
-      double iPulseJitter = 1.;
-      double iTimeMean = -5.5;
-      double iTimeSig = 5.;
-      double iPedMean = 0.;
-      double iPedSig = 0.5;
-      double iNoise = 1.;
-      double iTMin = -18.;
-      double iTMax = 7.;
-      double its3Chi2 = 5.;
-      double its4Chi2 = 15.;
-      double its345Chi2 = 100.;
-      double iChargeThreshold = 6.;
-      int iFitTimes = 1;
-
-
-      psFitOOTpuCorr_->setPUParams(iPedestalConstraint,iTimeConstraint,iAddPulseJitter,iUnConstrainedFit,iApplyTimeSlew,
-                    iTS4Min, iTS4Max, iPulseJitter,iTimeMean,iTimeSig,iPedMean,iPedSig,iNoise,iTMin,iTMax,its3Chi2,its4Chi2,its345Chi2,
-                    iChargeThreshold,HcalTimeSlew::Medium, iFitTimes);
-
-                   
-      // Now set the Pulse shape type
-      psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
-      // void PulseShapeFitOOTPileupCorrection::apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput)
-      // Changing to take the inputs (vectors) Charge and Pedestal and correctedOutput vector for the moment
-      // and will remain this way unless we change the ntuple
-
-      std::vector<double> correctedOutput, HLTOutput;
-      std::vector<double> inputCaloSample, inputPedestal;
-      std::vector<double> inputGain;
-
-     // std::cout << "Fill the input vectors" << std::endl;//DEBUG
-      for(int i = 0; i < 10; ++i) {
-        // Note: In CMSSW the "Charge" vector is not already pedestal subtracted, unlike here
-        // so I add the pedestal back to the charge so we can keep the same CMSSW implementation
-        inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
-        inputPedestal.push_back(Pedestal[j][i]);
-        inputGain.push_back(Gain[j][i]);
-      }
-      
-      //std::cout << "Begin to apply the method" << std::endl;//DEBUG
-      psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,correctedOutput);
-      //std::cout << "Finish applying the method" << std::endl;//DEBUG
-      //if(correctedOutput.size() > 1){std::cout << "Results are: energy = " << correctedOutput.at(0) << " time = " << correctedOutput.at(1) << std::endl;}
-
-	double RatioTS54, TimeSlew, Pulse = 0.;
-	hltThing_->apply(inputCaloSample,inputPedestal,inputGain,HLTOutput, RatioTS54, TimeSlew, Pulse, slewFit);
-	RatioPulse->Fill(RatioTS54, Pulse);
-	TimeSlewPulse->Fill(TimeSlew, Pulse);
-	Norm0->Fill(HLTOutput[0]);
-	Norm1->Fill(HLTOutput[1]);
-	Norm2->Fill(HLTOutput[2]);
-
-      // check to make sure that both methods have produced an output for this channel...
-      if(correctedOutput.size() > 1 && HLTOutput.size() > 1){
-        // Fill the histogram with E(Method2) v. E(HLT)
-        hCharge_Method2_v_HLT->SetBinContent(correctedOutput.at(0)*0.2, HLTOutput.at(1)*Gain[j][0]*0.2, 1+hCharge_Method2_v_HLT->GetBinContent(correctedOutput.at(0)*0.2, HLTOutput.at(1)*Gain[j][0]*0.2));
-        
-        // Fill the TProfile with the energy resolution
-        double resolution = 0;
-        correctedOutput.at(0) > 0 ? resolution = ( correctedOutput.at(0) - HLTOutput.at(1)*Gain[j][0] )/correctedOutput.at(0) : resolution = 0 ;
-        hHLTResolution->Fill(correctedOutput.at(0), resolution, 1);
-      }
+  for (int j = 0; j < (int)PulseCount; j++) {
     
-      // Should do something with the correctedOutput vector here, such as fill a histogram...
-      if(IEta[j] < 16 && correctedOutput.size() > 1) {
-        if(correctedOutput.at(1) > -99.){
-        CHARGE_TSTOT_HB_FIT->Fill(correctedOutput.at(0));
-        PULSE_ARRIVAL_HB_FIT->Fill(correctedOutput.at(1));
-        }
-      } else if(IEta[j] >= 16 && correctedOutput.size() > 1){
-       CHARGE_TSTOT_HE_FIT->Fill(correctedOutput.at(0));
-       PULSE_ARRIVAL_HE_FIT->Fill(correctedOutput.at(1));
+    //=========================================================================      
+    // These are the values we should set for Method 2 config with the python files
+    // Don't currently have a setup to input with python but we shouldn't have to
+    // change these values for our tests
+    
+    // --------------------------------------------------------------------
+    bool iPedestalConstraint = true;
+    bool iTimeConstraint = true;
+    bool iAddPulseJitter = false;
+    bool iUnConstrainedFit = false;
+    bool iApplyTimeSlew = true;
+    double iTS4Min = 5.;
+    double iTS4Max = 500.;
+    double iPulseJitter = 1.;
+    double iTimeMean = -5.5;
+    double iTimeSig = 5.;
+    double iPedMean = 0.;
+    double iPedSig = 0.5;
+    double iNoise = 1.;
+    double iTMin = -18.;
+    double iTMax = 7.;
+    double its3Chi2 = 5.;
+    double its4Chi2 = 15.;
+    double its345Chi2 = 100.;
+    double iChargeThreshold = 6.;
+    int iFitTimes = 1;
+    
+    //========================================================================
+
+    // Set the Method 2 Parameters here
+    psFitOOTpuCorr_->setPUParams(iPedestalConstraint,iTimeConstraint,iAddPulseJitter,iUnConstrainedFit,iApplyTimeSlew,
+                  iTS4Min, iTS4Max, iPulseJitter,iTimeMean,iTimeSig,iPedMean,iPedSig,iNoise,iTMin,iTMax,its3Chi2,its4Chi2,its345Chi2,
+                  iChargeThreshold,HcalTimeSlew::Medium, iFitTimes);
+
+                  
+    // Now set the Pulse shape type
+    psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
+    // void PulseShapeFitOOTPileupCorrection::apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput)
+    // Changing to take the inputs (vectors) Charge and Pedestal and correctedOutput vector for the moment
+    // and will remain this way unless we change the ntuple
+
+    std::vector<double> correctedOutput, HLTOutput;
+    std::vector<double> inputCaloSample, inputPedestal;
+    std::vector<double> inputGain;
+
+    // std::cout << "Fill the input vectors" << std::endl;//DEBUG
+    for(int i = 0; i < 10; ++i) {
+      // Note: In CMSSW the "Charge" vector is not already pedestal subtracted, unlike here
+      // so I add the pedestal back to the charge so we can keep the same CMSSW implementation
+      inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
+      inputPedestal.push_back(Pedestal[j][i]);
+      inputGain.push_back(Gain[j][i]);
+    }
+    
+    // Begin Method 2
+    psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,correctedOutput);
+
+    std::cout << "start HLT setup " << std::endl;
+    
+    double RatioTS54, TimeSlew, Pulse = 0.;
+    hltThing_->apply(inputCaloSample,inputPedestal,inputGain,HLTOutput, RatioTS54, TimeSlew, Pulse, slewFit);
+    RatioPulse->Fill(RatioTS54, Pulse);
+    TimeSlewPulse->Fill(TimeSlew, Pulse);
+    Norm0->Fill(HLTOutput.at(0));
+    Norm1->Fill(HLTOutput.at(1));
+    Norm2->Fill(HLTOutput.at(2));
+
+    // ------------ Fill our comparison histograms -------------------
+    // Make sure that the output vectors have non-zero number of entries
+    if(correctedOutput.size() > 1 && HLTOutput.size() > 1){
+      // Fill the histogram with Energy(Method2) v. Energy(HLT)
+      hCharge_Method2_v_HLT->SetBinContent(correctedOutput.at(0)*0.2+1, HLTOutput.at(1)*Gain[j][0]*0.2+1, 1+hCharge_Method2_v_HLT->GetBinContent(correctedOutput.at(0)*0.2+1, HLTOutput.at(1)*Gain[j][0]*0.2+1));
+
+      //if ((correctedOutput.at(0))>10 && (HLTOutput.at(1)*Gain[j][0])>10) NPASS++;
+      //else if ((correctedOutput.at(0))>10) NFAIL++;
+
+      // Fill the TProfile with the % difference of energies
+      double resolution = 0;
+      correctedOutput.at(0) > 0 ? resolution = ( correctedOutput.at(0) - HLTOutput.at(1)*Gain[j][0] )/correctedOutput.at(0) : resolution = 0 ;
+      hHLTResolution->Fill(correctedOutput.at(0), resolution, 1);
+      // Print statements for troubleshooting
+      //if((correctedOutput.at(0) > 30)) {// && (HLTOutput.at(1)*Gain[j][0] < 30)) {
+      //std::cout << "offline: " << correctedOutput.at(0);
+      //std::cout << " HLT: " << HLTOutput.at(0)*Gain[j][0] << " " << HLTOutput.at(1)*Gain[j][0] << " " << HLTOutput.at(2)*Gain[j][0];
+      //std::cout << " TS4+5: " << (inputCaloSample[4]+inputCaloSample[5])*Gain[j][0] << std::endl;
+	//std::cout << "Offline thinks this is a 30 GeV+ pulse: ";
+	//std::cout << HLTOutput.at(1)*Gain[j][0] << " " << HLTOutput.at(2)*Gain[j][0]   << std::endl;
+      /*      else if((correctedOutput.at(0) > 30) && (HLTOutput.at(1)*Gain[j][0] > 30)) {
+	std::cout << std::endl;
+	std::cout << "Offline thinks this is a 30 GeV+ pulse and HLT agrees: ";	
+	std::cout << "offline: " << correctedOutput.at(0);
+	std::cout << " HLT: " << HLTOutput.at(0)*Gain[j][0] << " " << HLTOutput.at(1)*Gain[j][0] << " " << HLTOutput.at(2)*Gain[j][0];
+	std::cout << " TS4+5: " << (inputCaloSample[4]+inputCaloSample[5])*Gain[j][0] << std::endl;
+	}*/
+    }
+  
+    // Should do something with the correctedOutput vector here, such as fill a histogram...
+    if(IEta[j] < 16 && correctedOutput.size() > 1) {
+      if(correctedOutput.at(1) > -99.){
+      CHARGE_TSTOT_HB_FIT->Fill(correctedOutput.at(0));
+      PULSE_ARRIVAL_HB_FIT->Fill(correctedOutput.at(1));
       }
-    }//PulseCount
- // }//cut[0]
+    } else if(IEta[j] >= 16 && correctedOutput.size() > 1){
+      CHARGE_TSTOT_HE_FIT->Fill(correctedOutput.at(0));
+      PULSE_ARRIVAL_HE_FIT->Fill(correctedOutput.at(1));
+    }
+  }//PulseCount
+
+
+
 }// End MakeCutflow Function
 
 void Analysis::FillHistograms()
@@ -349,10 +353,10 @@ void Analysis::FillHistograms()
 
 void Analysis::Finish()
 {
-    gStyle->SetOptFit(1);
-    TimeSlewPulse->Draw("BOX");
-    TimeSlewPulse->ProfileY("Y Profile",1,-1,"do")->Fit("pol1");
-    TimeSlewPulse->ProfileY("X Profile",1,-1,"do")->Fit("pol1");
+  gStyle->SetOptFit(1);
+  TimeSlewPulse->Draw("BOX");
+  TimeSlewPulse->ProfileY("Y Profile",1,-1,"do")->Fit("pol1");
+  TimeSlewPulse->ProfileY("X Profile",1,-1,"do")->Fit("pol1");
 
   fout->cd();
   fout->Write();

@@ -17,6 +17,7 @@
 #include "HybridMinimizer.h"
 #include "PulseShapeFitOOTPileupCorrection.h"
 #include "HLTAnalyzer.h"
+#include "HLTv2.h"
 
 #include <string>
 #include <vector>
@@ -39,33 +40,36 @@ class Analysis : public analysistree
 
   int nevents =0;
   
-    TH2F *RatioPulse;
-    TH2F *TimeSlewPulse;
-
-    TH1F *Norm0;
-    TH1F *Norm1;
-    TH1F *Norm2;
-
-//    TH1F *Ped;
-//    TH1F *Time;
-//    TH1F *Chi2;
-    TF1 *slewFit;
-    TF1 *logtimeslewFit;
-    TF1 *exptimeslewFit;
+  TH2F *RatioPulse;
+  TH2F *TimeSlewPulse;
+  
+  TH1F *Norm0;
+  TH1F *Norm1;
+  TH1F *Norm2;
+  
+  //    TH1F *Ped;
+  //    TH1F *Time;
+  //    TH1F *Chi2;
+  TF1 *slewFit;
+  TF1 *logtimeslewFit;
+  TF1 *exptimeslewFit;
   //Variables
 
   //Histograms
   TH1D *NUMBER_TS_ABOVE_THR_HB;
   TH1D *NUMBER_TS_ABOVE_THR_HE;
-
+  
   TH1D *CHARGE_TSTOT_HB_FIT;
   TH1D *CHARGE_TSTOT_HE_FIT;
   TH1D *PULSE_ARRIVAL_HB_FIT;
   TH1D *PULSE_ARRIVAL_HE_FIT;
   
   TH2D *hCharge_Method2_v_HLT;
+  TH2D *hCharge_Method2_v_JAY;
+  TH2D *hCharge_HLT_v_JAY;
   
   TProfile *hHLTResolution;
+  TProfile *hJayResolution;
  
   Analysis(TTree *tree);
   ~Analysis();
@@ -82,6 +86,7 @@ class Analysis : public analysistree
   TFile *fout;
   std::auto_ptr<PulseShapeFitOOTPileupCorrection> psFitOOTpuCorr_= std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection());
   std::auto_ptr<HLTAnalyzer> hltThing_= std::auto_ptr<HLTAnalyzer>(new HLTAnalyzer());
+  std::auto_ptr<HLTv2> hltv2_= std::auto_ptr<HLTv2>(new HLTv2());
   HcalPulseShapes theHcalPulseShapes_;
   
    

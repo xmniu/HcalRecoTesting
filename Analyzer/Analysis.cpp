@@ -130,8 +130,6 @@ void Analysis::Process() {
   int nbytes = 0, nb = 0;
 
   for (int jentry=0; jentry<nentries;jentry++) {
-    //int ientry =(int) LoadTree(jentry);
-    
     if(nevents%10==0) cout<<" "<<nevents<<"\t out of  "<<nentries<<"\t have already been processed ("<<round_nplaces((double)nevents/nentries*100,1)<<"%/100%)"<<endl;
 
     nb = fChain->GetEntry(jentry);   nbytes += nb;
@@ -177,6 +175,15 @@ void Analysis::Process() {
  // c_t_he_fit->SetLogy();
   c_t_he_fit->SaveAs("PULSE_ARRIVAL_HE_FIT.png");
   
+  TCanvas *c_Jay_profile = new TCanvas("c_jay_profile");
+  hJayResolution->GetXaxis()->SetTitle("M.2 Energy [GeV]");
+  hJayResolution->GetXaxis()->SetTitleSize(0.05);
+  hJayResolution->GetYaxis()->SetTitle("(M.2 - HLT v2)/M2 Energy");
+  hJayResolution->GetYaxis()->SetTitleSize(0.05);
+  hJayResolution->Draw();
+ // c_t_he_fit->SetLogy();
+  c_Jay_profile->SaveAs("hJayResolution.png");
+
   TCanvas *c_hlt_profile = new TCanvas("c_hlt_profile");
   hHLTResolution->GetXaxis()->SetTitle("M.2 Energy [GeV]");
   hHLTResolution->GetXaxis()->SetTitleSize(0.05);
@@ -194,6 +201,24 @@ void Analysis::Process() {
   hCharge_Method2_v_HLT->Draw("colz");
  // c_t_he_fit->SetLogy();
   c_hlt_v_m2->SaveAs("hCharge_Method2_v_HLT.png");
+
+  TCanvas *c_jay_v_m2 = new TCanvas("c_jay_v_m2");
+  hCharge_Method2_v_JAY->GetXaxis()->SetTitle("Energy of M.2 Rechit [GeV]");
+  hCharge_Method2_v_JAY->GetXaxis()->SetTitleSize(0.05);
+  hCharge_Method2_v_JAY->GetYaxis()->SetTitle("Energy of HLT v2 Rechit [GeV]");
+  hCharge_Method2_v_JAY->GetYaxis()->SetTitleSize(0.05);
+  hCharge_Method2_v_JAY->Draw("colz");
+  // c_t_he_fit->SetLogy();
+  c_jay_v_m2->SaveAs("hCharge_Method2_v_jay.png");
+
+  TCanvas *c_jay_v_hlt = new TCanvas("c_jay_v_hlt");
+  hCharge_HLT_v_JAY->GetXaxis()->SetTitle("Energy of HLT Rechit [GeV]");
+  hCharge_HLT_v_JAY->GetXaxis()->SetTitleSize(0.05);
+  hCharge_HLT_v_JAY->GetYaxis()->SetTitle("Energy of HLT v2 Rechit [GeV]");
+  hCharge_HLT_v_JAY->GetYaxis()->SetTitleSize(0.05);
+  hCharge_HLT_v_JAY->Draw("colz");
+  // c_t_he_fit->SetLogy();
+  c_jay_v_hlt->SaveAs("hCharge_hlt_v_jay.png");
 
  }
  
@@ -220,7 +245,12 @@ void Analysis::DefineHistograms()
   
   // Output Plots
   hHLTResolution=new TProfile("hHLTResolution","",20,0,100,-1.0,1.0);
+  hJayResolution=new TProfile("hJayResolution","",20,0,100,-1.0,1.0);
+
   hCharge_Method2_v_HLT=new TH2D("hCharge_Method2_v_HLT","",50,0,250,50,0,250);
+
+  hCharge_Method2_v_JAY=new TH2D("hCharge_Method2_v_jay","",50,0,250,50,0,250);
+  hCharge_HLT_v_JAY=new TH2D("hCharge_Method2_v_jay","",50,0,250,50,0,250);
   
   PULSE_ARRIVAL_HB_FIT=new TH1D("PULSE_ARRIVAL_HB_FIT","",50,-30.0,30.0);
   PULSE_ARRIVAL_HE_FIT=new TH1D("PULSE_ARRIVAL_HE_FIT","",50,-30.0,30.0);
@@ -272,16 +302,17 @@ void Analysis::MakeCutflow()
                   
     // Now set the Pulse shape type
     psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
+
     // void PulseShapeFitOOTPileupCorrection::apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput)
     // Changing to take the inputs (vectors) Charge and Pedestal and correctedOutput vector for the moment
     // and will remain this way unless we change the ntuple
 
-    std::vector<double> correctedOutput, HLTOutput;
+    std::vector<double> correctedOutput, HLTOutput, Jay1Output, Jay2Output;
     std::vector<double> inputCaloSample, inputPedestal;
     std::vector<double> inputGain;
 
-    // std::cout << "Fill the input vectors" << std::endl;//DEBUG
     for(int i = 0; i < 10; ++i) {
+
       // Note: In CMSSW the "Charge" vector is not already pedestal subtracted, unlike here
       // so I add the pedestal back to the charge so we can keep the same CMSSW implementation
       inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
@@ -292,10 +323,16 @@ void Analysis::MakeCutflow()
     // Begin Method 2
     psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,correctedOutput);
 
-    std::cout << "start HLT setup " << std::endl;
-    
+    // Begin Xinmei's implementation of HLT
     double RatioTS54, TimeSlew, Pulse = 0.;
     hltThing_->apply(inputCaloSample,inputPedestal,inputGain,HLTOutput, RatioTS54, TimeSlew, Pulse, slewFit);
+
+    // Begin Jay's implementation of HLT
+    hltv2_->applyOnce(inputCaloSample,inputPedestal,inputGain,Jay1Output, RatioTS54, TimeSlew, Pulse, slewFit);
+
+    hltv2_->applyOnceWithTS(inputCaloSample,inputPedestal,inputGain,Jay2Output, RatioTS54, TimeSlew, Pulse, slewFit);
+
+    
     RatioPulse->Fill(RatioTS54, Pulse);
     TimeSlewPulse->Fill(TimeSlew, Pulse);
     Norm0->Fill(HLTOutput.at(0));
@@ -304,46 +341,31 @@ void Analysis::MakeCutflow()
 
     // ------------ Fill our comparison histograms -------------------
     // Make sure that the output vectors have non-zero number of entries
-    if(correctedOutput.size() > 1 && HLTOutput.size() > 1){
-      // Fill the histogram with Energy(Method2) v. Energy(HLT)
+    if(correctedOutput.size() > 1 && Jay2Output.size() > 1){
+      
       hCharge_Method2_v_HLT->SetBinContent(correctedOutput.at(0)*0.2+1, HLTOutput.at(1)*Gain[j][0]*0.2+1, 1+hCharge_Method2_v_HLT->GetBinContent(correctedOutput.at(0)*0.2+1, HLTOutput.at(1)*Gain[j][0]*0.2+1));
-
-      //if ((correctedOutput.at(0))>10 && (HLTOutput.at(1)*Gain[j][0])>10) NPASS++;
-      //else if ((correctedOutput.at(0))>10) NFAIL++;
+      
+      hCharge_Method2_v_JAY->SetBinContent(correctedOutput.at(0)*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1, 1+hCharge_Method2_v_JAY->GetBinContent(correctedOutput.at(0)*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1));
+      
+      hCharge_HLT_v_JAY->SetBinContent(HLTOutput.at(1)*Gain[j][0]*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1, 1+hCharge_HLT_v_JAY->GetBinContent(HLTOutput.at(1)*Gain[j][0]*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1));
 
       // Fill the TProfile with the % difference of energies
       double resolution = 0;
-      correctedOutput.at(0) > 0 ? resolution = ( correctedOutput.at(0) - HLTOutput.at(1)*Gain[j][0] )/correctedOutput.at(0) : resolution = 0 ;
-      hHLTResolution->Fill(correctedOutput.at(0), resolution, 1);
-      // Print statements for troubleshooting
-      //if((correctedOutput.at(0) > 30)) {// && (HLTOutput.at(1)*Gain[j][0] < 30)) {
-      //std::cout << "offline: " << correctedOutput.at(0);
-      //std::cout << " HLT: " << HLTOutput.at(0)*Gain[j][0] << " " << HLTOutput.at(1)*Gain[j][0] << " " << HLTOutput.at(2)*Gain[j][0];
-      //std::cout << " TS4+5: " << (inputCaloSample[4]+inputCaloSample[5])*Gain[j][0] << std::endl;
-	//std::cout << "Offline thinks this is a 30 GeV+ pulse: ";
-	//std::cout << HLTOutput.at(1)*Gain[j][0] << " " << HLTOutput.at(2)*Gain[j][0]   << std::endl;
-      /*      else if((correctedOutput.at(0) > 30) && (HLTOutput.at(1)*Gain[j][0] > 30)) {
-	std::cout << std::endl;
-	std::cout << "Offline thinks this is a 30 GeV+ pulse and HLT agrees: ";	
-	std::cout << "offline: " << correctedOutput.at(0);
-	std::cout << " HLT: " << HLTOutput.at(0)*Gain[j][0] << " " << HLTOutput.at(1)*Gain[j][0] << " " << HLTOutput.at(2)*Gain[j][0];
-	std::cout << " TS4+5: " << (inputCaloSample[4]+inputCaloSample[5])*Gain[j][0] << std::endl;
-	}*/
-    }
-  
-    // Should do something with the correctedOutput vector here, such as fill a histogram...
-    if(IEta[j] < 16 && correctedOutput.size() > 1) {
-      if(correctedOutput.at(1) > -99.){
-      CHARGE_TSTOT_HB_FIT->Fill(correctedOutput.at(0));
-      PULSE_ARRIVAL_HB_FIT->Fill(correctedOutput.at(1));
+      correctedOutput.at(0) > 0 ? resolution = ( correctedOutput.at(0) - Jay2Output.at(1)*Gain[j][0] )/correctedOutput.at(0) : resolution = 0 ;
+      hJayResolution->Fill(correctedOutput.at(0), resolution, 1);
+
+      // Should do something with the correctedOutput vector here, such as fill a histogram...
+      if(IEta[j] < 16 && correctedOutput.size() > 1) {
+	if(correctedOutput.at(1) > -99.){
+	  CHARGE_TSTOT_HB_FIT->Fill(correctedOutput.at(0));
+	  PULSE_ARRIVAL_HB_FIT->Fill(correctedOutput.at(1));
+	}
+      } else if(IEta[j] >= 16 && correctedOutput.size() > 1){
+	CHARGE_TSTOT_HE_FIT->Fill(correctedOutput.at(0));
+	PULSE_ARRIVAL_HE_FIT->Fill(correctedOutput.at(1));
       }
-    } else if(IEta[j] >= 16 && correctedOutput.size() > 1){
-      CHARGE_TSTOT_HE_FIT->Fill(correctedOutput.at(0));
-      PULSE_ARRIVAL_HE_FIT->Fill(correctedOutput.at(1));
     }
   }//PulseCount
-
-
 
 }// End MakeCutflow Function
 

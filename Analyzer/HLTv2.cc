@@ -11,27 +11,15 @@ HLTv2::HLTv2() {
 HLTv2::~HLTv2() { 
 }
 
-void HLTv2::applyOnce(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput, double & RatioTS54, double & TimeSlew, double & Pulse, TF1 *slewFit) const
-{
-  // Iteration one assuming no time slew
-  Float_t fracL_intime=0;
-  getLandauFrac(0,25,fracL_intime);
-  Float_t fracL_next=0;
-  getLandauFrac(25,50,fracL_next);
+void HLTv2::applyOnce(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const {
+  Float_t corrCharge[10];
 
-  //hard coded for now
-  HLTOutput.clear();
-  HLTOutput.push_back(1.639*inputCharge[3]);
-  HLTOutput.push_back(1.639*inputCharge[4]-0.645*inputCharge[3]);
-  HLTOutput.push_back(1.639*inputCharge[5]-0.645*inputCharge[4]+0.254*inputCharge[5]);
-
-}  
-
-void HLTv2::applyOnceWithTS(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput, double & RatioTS54, double & TimeSlew, double & Pulse, TF1 *slewFit) const
-{
+  for (Int_t i=0; i<10; i++) {
+    corrCharge[i]=inputCharge[i]-inputPedestal[i];
+  }
 
   // Iteration one assuming time slew
-  Float_t tsShift=HcalTimeSlew::delay(inputCharge[4]);
+  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4]);
 
   Float_t fracL_prev=0;
   getLandauFrac(tsShift-25, tsShift, fracL_prev);
@@ -40,9 +28,9 @@ void HLTv2::applyOnceWithTS(const std::vector<double> & inputCharge, const std::
   Float_t fracL_next=0;
   getLandauFrac(tsShift+25,tsShift+50,fracL_next);
 
-  Float_t ch3 = ( (fracL_intime*fracL_intime-fracL_prev*fracL_next)*inputCharge[3] - fracL_intime*fracL_next*inputCharge[4] + fracL_next*fracL_next*inputCharge[5] ) /( fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
-  Float_t ch4 =  (fracL_prev*inputCharge[3] - fracL_intime*inputCharge[4] + fracL_next*inputCharge[5])/( 2*fracL_prev*fracL_next-fracL_intime*fracL_intime);
-  Float_t ch5 = (fracL_prev*fracL_prev*inputCharge[3]+(fracL_intime*fracL_intime-fracL_prev*fracL_next)*inputCharge[5]-fracL_next*fracL_intime*inputCharge[4]) / (fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  Float_t ch3 = ( (fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[3] - fracL_intime*fracL_next*corrCharge[4] + fracL_next*fracL_next*corrCharge[5] ) /( fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  Float_t ch4 =  (fracL_prev*corrCharge[3] - fracL_intime*corrCharge[4] + fracL_next*corrCharge[5])/( 2*fracL_prev*fracL_next-fracL_intime*fracL_intime);
+  Float_t ch5 = (fracL_prev*fracL_prev*corrCharge[3]+(fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[5]-fracL_next*fracL_intime*corrCharge[4]) / (fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
 
   HLTOutput.clear();
   HLTOutput.push_back(ch3);
@@ -51,6 +39,85 @@ void HLTv2::applyOnceWithTS(const std::vector<double> & inputCharge, const std::
 
 }  
 
+void HLTv2::applyOnceL4_45(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const {
+  Float_t corrCharge[10];
+  Float_t sortCharge[8];
+
+  Int_t j=0;
+  for (Int_t i=0; i<10; i++) {
+    corrCharge[i]=inputCharge[i]-inputPedestal[i];
+
+    if (i!=4&&i!=5) {
+      sortCharge[j]=corrCharge[i]; j++;
+    }
+  }
+
+  std::sort(std::begin(sortCharge), std::end(sortCharge));
+
+  Float_t beSub=0;
+  for (Int_t i=0; i<4; i++) {
+    beSub+=sortCharge[i]/4;
+  }
+
+  for (Int_t i=0; i<10; i++) {
+    corrCharge[i]-=beSub;
+  }
+
+  // Iteration one assuming time slew
+  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4]);
+
+  Float_t fracL_prev=0;
+  getLandauFrac(tsShift-25, tsShift, fracL_prev);
+  Float_t fracL_intime=0;
+  getLandauFrac(tsShift,tsShift+25,fracL_intime);
+  Float_t fracL_next=0;
+  getLandauFrac(tsShift+25,tsShift+50,fracL_next);
+
+  Float_t ch3 = ( (fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[3] - fracL_intime*fracL_next*corrCharge[4] + fracL_next*fracL_next*corrCharge[5] ) /( fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  Float_t ch4 =  (fracL_prev*corrCharge[3] - fracL_intime*corrCharge[4] + fracL_next*corrCharge[5])/( 2*fracL_prev*fracL_next-fracL_intime*fracL_intime);
+  Float_t ch5 = (fracL_prev*fracL_prev*corrCharge[3]+(fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[5]-fracL_next*fracL_intime*corrCharge[4]) / (fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+
+  HLTOutput.clear();
+  HLTOutput.push_back(ch3);
+  HLTOutput.push_back(ch4);
+  HLTOutput.push_back(ch5);
+
+}  
+
+
+void HLTv2::applyOnce012(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const {
+  Float_t corrCharge[10];
+
+  Float_t beSub=0;
+
+  for (Int_t i=0; i<3; i++) {
+    beSub+=(inputCharge[i]-inputPedestal[i])/3;
+  }
+
+  for (Int_t i=0; i<10; i++) {
+    corrCharge[i]=inputCharge[i]-inputPedestal[i]-beSub;
+  }
+
+  // Iteration one assuming time slew
+  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4]);
+
+  Float_t fracL_prev=0;
+  getLandauFrac(tsShift-25, tsShift, fracL_prev);
+  Float_t fracL_intime=0;
+  getLandauFrac(tsShift,tsShift+25,fracL_intime);
+  Float_t fracL_next=0;
+  getLandauFrac(tsShift+25,tsShift+50,fracL_next);
+
+  Float_t ch3 = ( (fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[3] - fracL_intime*fracL_next*corrCharge[4] + fracL_next*fracL_next*corrCharge[5] ) /( fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  Float_t ch4 =  (fracL_prev*corrCharge[3] - fracL_intime*corrCharge[4] + fracL_next*corrCharge[5])/( 2*fracL_prev*fracL_next-fracL_intime*fracL_intime);
+  Float_t ch5 = (fracL_prev*fracL_prev*corrCharge[3]+(fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[5]-fracL_next*fracL_intime*corrCharge[4]) / (fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+
+  HLTOutput.clear();
+  HLTOutput.push_back(ch3);
+  HLTOutput.push_back(ch4);
+  HLTOutput.push_back(ch5);
+
+}  
 
 // Landau function integrated in 1 ns intervals
 //Landau pulse shape from https://indico.cern.ch/event/345283/contribution/3/material/slides/0.pdf

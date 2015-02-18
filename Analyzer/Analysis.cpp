@@ -129,17 +129,19 @@ void Analysis::Process() {
 
   int nbytes = 0, nb = 0;
 
-  for (int jentry=0; jentry<nentries;jentry++) {
-    if(nevents%10==0) cout<<" "<<nevents<<"\t out of  "<<nentries<<"\t have already been processed ("<<round_nplaces((double)nevents/nentries*100,1)<<"%/100%)"<<endl;
+  int nSeq[5]={0,0,0,0,0};
 
+  for (int jentry=0; jentry<nentries;jentry++) {
+    //if(nevents%10==0) cout<<" "<<nevents<<"\t out of  "<<nentries<<"\t have already been processed ("<<round_nplaces((double)nevents/nentries*100,1)<<"%/100%)"<<endl;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
 
     nevents++;
     MakeCutflow();
+    //MakePedestalPlots(nSeq);
     FillHistograms();
   }
 
-  TCanvas *c_tstot_hb_fit = new TCanvas("c_tstot_hb_fit");
+  /*  TCanvas *c_tstot_hb_fit = new TCanvas("c_tstot_hb_fit");
   CHARGE_TSTOT_HB_FIT->GetXaxis()->SetTitle("Total Charge from Fit [fC]");
   CHARGE_TSTOT_HB_FIT->GetXaxis()->SetTitleSize(0.05);
   CHARGE_TSTOT_HB_FIT->GetYaxis()->SetTitle("Hits");
@@ -172,54 +174,240 @@ void Analysis::Process() {
   PULSE_ARRIVAL_HE_FIT->GetYaxis()->SetTitle("Hits");
   PULSE_ARRIVAL_HE_FIT->GetYaxis()->SetTitleSize(0.05);
   PULSE_ARRIVAL_HE_FIT->Draw();
- // c_t_he_fit->SetLogy();
-  c_t_he_fit->SaveAs("PULSE_ARRIVAL_HE_FIT.png");
-  
-  TCanvas *c_Jay_profile = new TCanvas("c_jay_profile");
-  hJayResolution->GetXaxis()->SetTitle("M.2 Energy [GeV]");
-  hJayResolution->GetXaxis()->SetTitleSize(0.05);
-  hJayResolution->GetYaxis()->SetTitle("(M.2 - HLT v2)/M2 Energy");
-  hJayResolution->GetYaxis()->SetTitleSize(0.05);
-  hJayResolution->Draw();
- // c_t_he_fit->SetLogy();
-  c_Jay_profile->SaveAs("hJayResolution.png");
-
-  TCanvas *c_hlt_profile = new TCanvas("c_hlt_profile");
-  hHLTResolution->GetXaxis()->SetTitle("M.2 Energy [GeV]");
-  hHLTResolution->GetXaxis()->SetTitleSize(0.05);
-  hHLTResolution->GetYaxis()->SetTitle("(M.2 - HLT)/M2 Energy");
-  hHLTResolution->GetYaxis()->SetTitleSize(0.05);
-  hHLTResolution->Draw();
- // c_t_he_fit->SetLogy();
-  c_hlt_profile->SaveAs("hHLTResolution.png");
-  
-  TCanvas *c_hlt_v_m2 = new TCanvas("c_hlt_v_m2");
-  hCharge_Method2_v_HLT->GetXaxis()->SetTitle("Energy of M.2 Rechit [GeV]");
-  hCharge_Method2_v_HLT->GetXaxis()->SetTitleSize(0.05);
-  hCharge_Method2_v_HLT->GetYaxis()->SetTitle("Energy of HLT Rechit [GeV]");
-  hCharge_Method2_v_HLT->GetYaxis()->SetTitleSize(0.05);
-  hCharge_Method2_v_HLT->Draw("colz");
- // c_t_he_fit->SetLogy();
-  c_hlt_v_m2->SaveAs("hCharge_Method2_v_HLT.png");
-
-  TCanvas *c_jay_v_m2 = new TCanvas("c_jay_v_m2");
-  hCharge_Method2_v_JAY->GetXaxis()->SetTitle("Energy of M.2 Rechit [GeV]");
-  hCharge_Method2_v_JAY->GetXaxis()->SetTitleSize(0.05);
-  hCharge_Method2_v_JAY->GetYaxis()->SetTitle("Energy of HLT v2 Rechit [GeV]");
-  hCharge_Method2_v_JAY->GetYaxis()->SetTitleSize(0.05);
-  hCharge_Method2_v_JAY->Draw("colz");
   // c_t_he_fit->SetLogy();
-  c_jay_v_m2->SaveAs("hCharge_Method2_v_jay.png");
+  c_t_he_fit->SaveAs("PULSE_ARRIVAL_HE_FIT.png");*/
+  
+  TCanvas *c1 = new TCanvas("c1");
+  gStyle->SetOptStat    (0);
+  /*
+  hPedSub1->GetXaxis()->SetTitle("Baseline Energy M45 [GeV]");
+  hPedSub1->GetXaxis()->SetTitleSize(0.05);
+  hPedSub1->GetYaxis()->SetTitle("Counts");
+  hPedSub1->GetYaxis()->SetTitleSize(0.05);
+  //c1->SetLogy();
+  hPedSub1->Draw("");
+  c1->SaveAs("pedSub1.png");
 
-  TCanvas *c_jay_v_hlt = new TCanvas("c_jay_v_hlt");
-  hCharge_HLT_v_JAY->GetXaxis()->SetTitle("Energy of HLT Rechit [GeV]");
-  hCharge_HLT_v_JAY->GetXaxis()->SetTitleSize(0.05);
-  hCharge_HLT_v_JAY->GetYaxis()->SetTitle("Energy of HLT v2 Rechit [GeV]");
-  hCharge_HLT_v_JAY->GetYaxis()->SetTitleSize(0.05);
-  hCharge_HLT_v_JAY->Draw("colz");
-  // c_t_he_fit->SetLogy();
-  c_jay_v_hlt->SaveAs("hCharge_hlt_v_jay.png");
+  hPedSub2->GetXaxis()->SetTitle("Baseline Energy M012 [GeV]");
+  hPedSub2->GetXaxis()->SetTitleSize(0.05);
+  hPedSub2->GetYaxis()->SetTitle("Counts");
+  hPedSub2->GetYaxis()->SetTitleSize(0.05);
+  hPedSub2->Draw("");
+  c1->SaveAs("pedSub2.png");
 
+  hPedDiff->GetXaxis()->SetTitle("Diff. BE (M45-M012) [GeV]");
+  hPedDiff->GetXaxis()->SetTitleSize(0.05);
+  hPedDiff->GetYaxis()->SetTitle("Counts");
+  hPedDiff->GetYaxis()->SetTitleSize(0.05);
+  hPedDiff->Draw("");
+  c1->SaveAs("pedDiff.png");
+  */
+  h45vHLT0->GetXaxis()->SetTitle("Energy Deposition TS4+5  [GeV]");
+  h45vHLT0->GetXaxis()->SetTitleSize(0.05);
+  h45vHLT0->GetYaxis()->SetTitle("Energy Deposition from HLT m0 [GeV]");
+  h45vHLT0->GetYaxis()->SetTitleSize(0.05);
+  h45vHLT0->Draw("colz");
+  c1->SaveAs("h45vHLT0.png");
+
+  h45vHLT1->GetXaxis()->SetTitle("Energy Deposition TS4+5  [GeV]");
+  h45vHLT1->GetXaxis()->SetTitleSize(0.05);
+  h45vHLT1->GetYaxis()->SetTitle("Energy Deposition from HLT m1 [GeV]");
+  h45vHLT1->GetYaxis()->SetTitleSize(0.05);
+  h45vHLT1->Draw("colz");
+  c1->SaveAs("h45vHLT1.png");
+
+  h45vHLT2->GetXaxis()->SetTitle("Energy Deposition TS4+5  [GeV]");
+  h45vHLT2->GetXaxis()->SetTitleSize(0.05);
+  h45vHLT2->GetYaxis()->SetTitle("Energy Deposition from HLT m2 [GeV]");
+  h45vHLT2->GetYaxis()->SetTitleSize(0.05);
+  h45vHLT2->Draw("colz");
+  c1->SaveAs("h45vHLT2.png");
+
+  p45vHLT0->GetXaxis()->SetTitle("Energy Deposition TS4+5 [GeV]");
+  p45vHLT0->GetXaxis()->SetTitleSize(0.05);
+  p45vHLT0->GetYaxis()->SetTitle("(E4+5 - HLT)/E4+5");
+  p45vHLT0->GetYaxis()->SetTitleSize(0.05);
+  p45vHLT0->Draw();
+  c1->SaveAs("p45vHLT0.png");
+
+  p45vHLT1->GetXaxis()->SetTitle("Energy Deposition 4+5 [GeV]");
+  p45vHLT1->GetXaxis()->SetTitleSize(0.05);
+  p45vHLT1->GetYaxis()->SetTitle("(E4+5 - HLT)/E4+5");
+  p45vHLT1->GetYaxis()->SetTitleSize(0.05);
+  p45vHLT1->Draw();
+  c1->SaveAs("p45vHLT1.png");
+
+  p45vHLT2->GetXaxis()->SetTitle("Energy Deposition 4+5 [GeV]");
+  p45vHLT2->GetXaxis()->SetTitleSize(0.05);
+  p45vHLT2->GetYaxis()->SetTitle("(E4+5 - HLT)/E4+5");
+  p45vHLT2->GetYaxis()->SetTitleSize(0.05);
+  p45vHLT2->Draw();
+  c1->SaveAs("p45vHLT2.png");
+
+  hM2vHLT0->GetXaxis()->SetTitle("M2 Energy [GeV]");
+  hM2vHLT0->GetXaxis()->SetTitleSize(0.05);
+  hM2vHLT0->GetYaxis()->SetTitle("Energy Deposition from HLT m0 [GeV]");
+  hM2vHLT0->GetYaxis()->SetTitleSize(0.05);
+  hM2vHLT0->Draw("colz");
+  c1->SaveAs("hM2vHLT0.png");
+
+  hM2vHLT1->GetXaxis()->SetTitle("M2 Energy [GeV]");
+  hM2vHLT1->GetXaxis()->SetTitleSize(0.05);
+  hM2vHLT1->GetYaxis()->SetTitle("Energy Deposition from HLT m1 [GeV]");
+  hM2vHLT1->GetYaxis()->SetTitleSize(0.05);
+  hM2vHLT1->Draw("colz");
+  c1->SaveAs("hM2vHLT1.png");
+
+  hM2vHLT2->GetXaxis()->SetTitle("M2 Energy [GeV]");
+  hM2vHLT2->GetXaxis()->SetTitleSize(0.05);
+  hM2vHLT2->GetYaxis()->SetTitle("Energy Deposition from HLT m2 [GeV]");
+  hM2vHLT2->GetYaxis()->SetTitleSize(0.05);
+  hM2vHLT2->Draw("colz");
+  c1->SaveAs("hhM2vHLT2.png");
+
+  pM2vHLT0->GetXaxis()->SetTitle("M2 Energy [GeV]");
+  pM2vHLT0->GetXaxis()->SetTitleSize(0.05);
+  pM2vHLT0->GetYaxis()->SetTitle("(M2 - HLT)/(M2)");
+  pM2vHLT0->GetYaxis()->SetTitleSize(0.05);
+  pM2vHLT0->Draw();
+  c1->SaveAs("pM2vHLT0.png");
+
+  pM2vHLT1->GetXaxis()->SetTitle("M2 Energy [GeV]");
+  pM2vHLT1->GetXaxis()->SetTitleSize(0.05);
+  pM2vHLT1->GetYaxis()->SetTitle("(M2 - HLT)/(M2)");
+  pM2vHLT1->GetYaxis()->SetTitleSize(0.05);
+  pM2vHLT1->Draw();
+  c1->SaveAs("pM2vHLT1.png");
+
+  pM2vHLT2->GetXaxis()->SetTitle("M2 Energy [GeV]");
+  pM2vHLT2->GetXaxis()->SetTitleSize(0.05);
+  pM2vHLT2->GetYaxis()->SetTitle("(M2 - HLT)/(M2)");
+  pM2vHLT2->GetYaxis()->SetTitleSize(0.05);
+  pM2vHLT2->Draw();
+  c1->SaveAs("pM2vHLT2.png");
+
+  /*
+  TH1D *hEdepDist_all;
+  TH1D *hEdepDist_not3456;
+  TH1D *hEdepDist_not345;
+  TH1D *hEdepDist_least;
+  TH1D *hEdepDist_least4;
+  TH1D *hEdepDist_least_not3456;
+  TH1D *hEdepDist_least_not345;
+  TH1D *hEdepDist_least4_not3456;
+  TH1D *hEdepDist_least4_not345;*/
+    
+  /*  TCanvas *cEdep = new TCanvas("cEdep");
+  cEdep->SetLogy();
+
+  //nothing excluded
+  hEdepDist_all->GetXaxis()->SetTitle("Energy deposition per TS [GeV]");
+  hEdepDist_all->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_all->GetYaxis()->SetTitle("Counts");
+  hEdepDist_all->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_all->Draw();
+  cEdep->SaveAs("edep_all.png");
+
+  //excluding TS3,4,5,6
+  hEdepDist_not3456->GetXaxis()->SetTitle("Energy deposition per TS, not TS3/4/5/6 [GeV]");
+  hEdepDist_not3456->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_not3456->GetYaxis()->SetTitle("Counts");
+  hEdepDist_not3456->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_not3456->Draw();
+  cEdep->SaveAs("edep_not3456.png");
+
+  //excluding TS3,4,5
+  hEdepDist_not345->GetXaxis()->SetTitle("Energy deposition per TS, not TS3/4/5 [GeV]");
+  hEdepDist_not345->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_not345->GetYaxis()->SetTitle("Counts");
+  hEdepDist_not345->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_not345->Draw();
+  cEdep->SaveAs("edep_not345.png");
+
+  //excluding TS4,5
+  hEdepDist_not45->GetXaxis()->SetTitle("Energy deposition per TS, not TS4/5 [GeV]");
+  hEdepDist_not45->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_not45->GetYaxis()->SetTitle("Counts");
+  hEdepDist_not45->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_not45->Draw();
+  cEdep->SaveAs("edep_not45.png");
+
+  //only least TS per 10 TS's
+  hEdepDist_least->GetXaxis()->SetTitle("Energy deposition for least TS of 10 [GeV]");
+  hEdepDist_least->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least->Draw();
+  cEdep->SaveAs("edep_least.png");
+
+  //only least 4 TS per 10 TS's
+  hEdepDist_least4->GetXaxis()->SetTitle("Energy deposition for least 4 TS of 10 [GeV]");
+  hEdepDist_least4->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least4->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least4->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least4->Draw();
+  cEdep->SaveAs("edep_least4.png");
+
+  //only least TS per 10 TS's excluding TS3,4,5,6
+  hEdepDist_least_not3456->GetXaxis()->SetTitle("Energy deposition for least TS of 10, not TS3/4/5/6 [GeV]");
+  hEdepDist_least_not3456->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least_not3456->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least_not3456->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least_not3456->Draw();
+  cEdep->SaveAs("edep_least_not3456.png");
+
+  //only least TS per 10 TS's excluding TS3,4,5
+  hEdepDist_least_not345->GetXaxis()->SetTitle("Energy deposition for least TS of 10, not TS3/4/5 [GeV]");
+  hEdepDist_least_not345->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least_not345->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least_not345->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least_not345->Draw();
+  cEdep->SaveAs("edep_least_not345.png");
+
+  //only least TS per 10 TS's excluding TS4,5
+  hEdepDist_least_not45->GetXaxis()->SetTitle("Energy deposition for least TS of 10, not TS4/5 [GeV]");
+  hEdepDist_least_not45->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least_not45->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least_not45->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least_not45->Draw();
+  cEdep->SaveAs("edep_least_not45.png");
+
+  //only least 4 TS per 10 TS's excluding TS3,4,5,6
+  hEdepDist_least4_not3456->GetXaxis()->SetTitle("Energy deposition for least 4 TS of 10, not TS3/4/5/6 [GeV]");
+  hEdepDist_least4_not3456->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least4_not3456->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least4_not3456->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least4_not3456->Draw();
+  cEdep->SaveAs("edep_least4_not3456.png");
+
+  //only least 4 TS per 10 TS's excluding TS3,4,5
+  hEdepDist_least4_not345->GetXaxis()->SetTitle("Energy deposition for least 4 TS of 10, not TS3/4/5 [GeV]");
+  hEdepDist_least4_not345->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least4_not345->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least4_not345->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least4_not345->Draw();
+  cEdep->SaveAs("edep_least4_not345.png");
+
+  //only least 4 TS per 10 TS's excluding TS4,5
+  hEdepDist_least4_not45->GetXaxis()->SetTitle("Energy deposition for least 4 TS of 10, not TS4/5 [GeV]");
+  hEdepDist_least4_not45->GetXaxis()->SetTitleSize(0.05);
+  hEdepDist_least4_not45->GetYaxis()->SetTitle("Counts");
+  hEdepDist_least4_not45->GetYaxis()->SetTitleSize(0.05);
+  //hEdepDist->GetYaxis()->SetRangeUser(0,100);
+  hEdepDist_least4_not45->Draw();
+  cEdep->SaveAs("edep_least4_not45.png");
+  */
  }
  
 void Analysis::DefineHistograms()
@@ -227,30 +415,62 @@ void Analysis::DefineHistograms()
   fout = new TFile(Output_File.c_str(), "RECREATE");
   
   // ---------------Plots for HLT ------------
-  RatioPulse = new TH2F("RatioPulse","TS5/TS4 vs TS45",20,0.,2.,100,0.,500.);
-  TimeSlewPulse = new TH2F("TimeSlewPulse","Time Slew vs TS45",25,-14.5,10.5,100,0.,500.);
+  //RatioPulse = new TH2F("RatioPulse","TS5/TS4 vs TS45",20,0.,2.,100,0.,500.);
+  //TimeSlewPulse = new TH2F("TimeSlewPulse","Time Slew vs TS45",25,-14.5,10.5,100,0.,500.);
   
-  Norm0 = new TH1F("fC0","Amplitude in Pulse ealier [fC]",100,0.,500.);
-  Norm1 = new TH1F("fC1","Amplitude in in-time Pulse [fC]",100,0.,500.);
-  Norm2 = new TH1F("fC2","Amplitude in Pulse later [fC]",100,0.,500.);
+  //Norm0 = new TH1F("fC0","Amplitude in Pulse ealier [fC]",100,0.,500.);
+  //Norm1 = new TH1F("fC1","Amplitude in in-time Pulse [fC]",100,0.,500.);
+  //Norm2 = new TH1F("fC2","Amplitude in Pulse later [fC]",100,0.,500.);
   
-  slewFit = new TF1("slewFit","pol4*expo(5)",-10.,14.);
-  slewFit->SetParameters(1.07618e-02,-4.19145e-06,2.70310e-05,-8.71584e-08,1.86597e-07,3.59216e+00,-1.02057e-01);
+  //slewFit = new TF1("slewFit","pol4*expo(5)",-10.,14.);
+  //slewFit->SetParameters(1.07618e-02,-4.19145e-06,2.70310e-05,-8.71584e-08,1.86597e-07,3.59216e+00,-1.02057e-01);
     
-  logtimeslewFit = new TF1("logtimeslewFit", "[0]+[1]*TMath::Log(x+[2])",0.,500.);
-  logtimeslewFit->SetParameters(3.89838e+01, -6.93560e+00, 8.52052e+01);
+  //logtimeslewFit = new TF1("logtimeslewFit", "[0]+[1]*TMath::Log(x+[2])",0.,500.);
+  //logtimeslewFit->SetParameters(3.89838e+01, -6.93560e+00, 8.52052e+01);
   
-  exptimeslewFit = new TF1("exptimeslewFit", "[0]+[1]*TMath::Exp([2]*x)",0.,500.);
-  exptimeslewFit->SetParameters(-2.69330e+00, 1.09162e+01, -7.60722e-03);
+  //exptimeslewFit = new TF1("exptimeslewFit", "[0]+[1]*TMath::Exp([2]*x)",0.,500.);
+  //exptimeslewFit->SetParameters(-2.69330e+00, 1.09162e+01, -7.60722e-03);
   
   // Output Plots
-  hHLTResolution=new TProfile("hHLTResolution","",20,0,100,-1.0,1.0);
-  hJayResolution=new TProfile("hJayResolution","",20,0,100,-1.0,1.0);
+  //hHLTResolution=new TProfile("hHLTResolution","",20,0,100,-1.0,1.0);
+  //hJayResolution=new TProfile("hJayResolution","",20,0,100,-1.0,1.0);
 
-  hCharge_Method2_v_HLT=new TH2D("hCharge_Method2_v_HLT","",50,0,250,50,0,250);
+  Int_t xBins=100;
+  Int_t xMin=0;
+  Int_t xMax=10;
 
-  hCharge_Method2_v_JAY=new TH2D("hCharge_Method2_v_jay","",50,0,250,50,0,250);
-  hCharge_HLT_v_JAY=new TH2D("hCharge_Method2_v_jay","",50,0,250,50,0,250);
+  //TH2D *h45vHLT0;
+  h45vHLT0 = new TH2D("h45vHLT0", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  //TH2D *h45vHLT1;
+  h45vHLT1 = new TH2D("h45vHLT1", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  //TH2D *h45vHLT2;
+  h45vHLT2 = new TH2D("h45vHLT2", "", xBins,xMin,xMax,xBins,xMin,xMax);
+
+  //TProfile *p45vHLT0;
+  p45vHLT0 = new TProfile("p45vHLT0", "", xBins/10,xMin,xMax,-10,10);
+  //TProfile *p45vHLT1;
+  p45vHLT1 = new TProfile("p45vHLT1", "", xBins/10,xMin,xMax,-10,10);
+  //TProfile *p45vHLT2;
+  p45vHLT2 = new TProfile("p45vHLT2", "", xBins/10,xMin,xMax,-10,10);
+
+  //TH2D *hM2vHLT0;
+  hM2vHLT0 = new TH2D("hM2vHLT0", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  //TH2D *hM2vHLT1;
+  hM2vHLT1 = new TH2D("hM2vHLT1", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  //TH2D *hM2vHLT2;
+  hM2vHLT2 = new TH2D("hM2vHLT2", "", xBins,xMin,xMax,xBins,xMin,xMax);
+
+  //TProfile *pM2vHLT0;
+  pM2vHLT0 = new TProfile("pM2vHLT0", "", xBins/10,xMin,xMax,-10,10);
+  //TProfile *pM2vHLT1;
+  pM2vHLT1 = new TProfile("pM2vHLT1", "", xBins/10,xMin,xMax,-10,10);
+  //TProfile *pM2vHLT2;
+  pM2vHLT2 = new TProfile("pM2vHLT2", "", xBins/10,xMin,xMax,-10,10);
+
+  //hCharge_Method2_v_HLT=new TH2D("hCharge_Method2_v_HLT","",50,0,250,50,0,250);
+
+  //hCharge_Method2_v_JAY=new TH2D("hCharge_Method2_v_jay","",50,0,250,50,0,250);
+  //hCharge_HLT_v_JAY=new TH2D("hCharge_Method2_v_jay","",50,0,250,50,0,250);
   
   PULSE_ARRIVAL_HB_FIT=new TH1D("PULSE_ARRIVAL_HB_FIT","",50,-30.0,30.0);
   PULSE_ARRIVAL_HE_FIT=new TH1D("PULSE_ARRIVAL_HE_FIT","",50,-30.0,30.0);
@@ -258,6 +478,40 @@ void Analysis::DefineHistograms()
   CHARGE_TSTOT_HB_FIT=new TH1D("CHARGE_TSTOT_HB_FIT","",150,0,1500);
   CHARGE_TSTOT_HE_FIT=new TH1D("CHARGE_TSTOT_HE_FIT","",150,0,1500);
 
+  hPedSub1 = new TH1D("hPedSub1", "", 100,-1,1);
+  hPedSub2 = new TH1D("hPedSub2", "", 100,-1,1);
+  hPedDiff = new TH1D("hPedDiff", "", 100,-1,1);
+
+  /*  TH1D *hEdepDist_all;
+  TH1D *hEdepDist_not3456;
+  TH1D *hEdepDist_not345;
+  TH1D *hEdepDist_least;
+  TH1D *hEdepDist_least4;
+  TH1D *hEdepDist_least_not3456;
+  TH1D *hEdepDist_least_not345;
+  TH1D *hEdepDist_least4_not3456;
+  TH1D *hEdepDist_least4_not345;*/
+
+  hEdepDist_all            =new TH1D("hEdepDist_all", "",50,0,200);
+  hEdepDist_not3456        =new TH1D("hEdepDist_not3456", "",50,0,100);
+  hEdepDist_not345         =new TH1D("hEdepDist_not345", "",50,0,100);
+  hEdepDist_not45          =new TH1D("hEdepDist_not45", "",50,0,100);
+  hEdepDist_least          =new TH1D("hEdepDist_least", "",100,-5,5);
+  hEdepDist_least4         =new TH1D("hEdepDist_least4", "",100,-5,15);
+  hEdepDist_least_not3456  =new TH1D("hEdepDist_least_not3456", "",100,-5,5);
+  hEdepDist_least_not345   =new TH1D("hEdepDist_least_not345", "",100,-5,5);
+  hEdepDist_least_not45    =new TH1D("hEdepDist_least_not45", "",100,-5,5);
+  hEdepDist_least4_not3456 =new TH1D("hEdepDist_least4_not3456", "",100,-5,15);
+  hEdepDist_least4_not345  =new TH1D("hEdepDist_least4_not345", "",100,-5,15);
+  hEdepDist_least4_not45  =new TH1D("hEdepDist_least4_not45", "",100,-5,15);
+
+  char hname[50];
+  for (Int_t i=0; i<10; i++) {
+    sprintf(hname,"hPed_%i",i);
+    vHistPed.push_back(new TH1D(hname,"",100,-10,10));
+    sprintf(hname,"hVal_%i",i);
+    vHistVal.push_back(new TH1D(hname,"",100,-10,10));
+  }
 }
 
 void Analysis::MakeCutflow() 
@@ -307,52 +561,75 @@ void Analysis::MakeCutflow()
     // Changing to take the inputs (vectors) Charge and Pedestal and correctedOutput vector for the moment
     // and will remain this way unless we change the ntuple
 
-    std::vector<double> correctedOutput, HLTOutput, Jay1Output, Jay2Output;
+    std::vector<double> correctedOutput, HLTOutput, Jay0Output, Jay1Output, Jay2Output;
     std::vector<double> inputCaloSample, inputPedestal;
     std::vector<double> inputGain;
 
+    // ignore pulses of less than 1 GeV in TS 4+5
+    if ( (Charge[j][4]+Charge[j][5])<5 ) continue;
+    
     for(int i = 0; i < 10; ++i) {
-
+      
       // Note: In CMSSW the "Charge" vector is not already pedestal subtracted, unlike here
       // so I add the pedestal back to the charge so we can keep the same CMSSW implementation
       inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
       inputPedestal.push_back(Pedestal[j][i]);
       inputGain.push_back(Gain[j][i]);
+
+      //hEdepDist->Fill( (Pedestal[j][i]) );
     }
-    
+
     // Begin Method 2
     psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,correctedOutput);
 
     // Begin Xinmei's implementation of HLT
-    double RatioTS54, TimeSlew, Pulse = 0.;
-    hltThing_->apply(inputCaloSample,inputPedestal,inputGain,HLTOutput, RatioTS54, TimeSlew, Pulse, slewFit);
+    //double RatioTS54, TimeSlew, Pulse = 0.;
+    //hltThing_->apply(inputCaloSample,inputPedestal,inputGain,HLTOutput, RatioTS54, TimeSlew, Pulse, slewFit);
 
     // Begin Jay's implementation of HLT
-    hltv2_->applyOnce(inputCaloSample,inputPedestal,inputGain,Jay1Output, RatioTS54, TimeSlew, Pulse, slewFit);
-
-    hltv2_->applyOnceWithTS(inputCaloSample,inputPedestal,inputGain,Jay2Output, RatioTS54, TimeSlew, Pulse, slewFit);
-
+    hltv2_->applyOnce(inputCaloSample,inputPedestal,inputGain,Jay0Output);
+    hltv2_->applyOnceL4_45(inputCaloSample,inputPedestal,inputGain,Jay1Output);
+    hltv2_->applyOnce012(inputCaloSample,inputPedestal,inputGain,Jay2Output);
     
-    RatioPulse->Fill(RatioTS54, Pulse);
-    TimeSlewPulse->Fill(TimeSlew, Pulse);
-    Norm0->Fill(HLTOutput.at(0));
-    Norm1->Fill(HLTOutput.at(1));
-    Norm2->Fill(HLTOutput.at(2));
+    //RatioPulse->Fill(RatioTS54, Pulse);
+    //TimeSlewPulse->Fill(TimeSlew, Pulse);
+    //Norm0->Fill(Jay1Output.at(0));
+    //Norm1->Fill(Jay1Output.at(1));
+    //Norm2->Fill(Jay1Output.at(2));
 
     // ------------ Fill our comparison histograms -------------------
     // Make sure that the output vectors have non-zero number of entries
-    if(correctedOutput.size() > 1 && Jay2Output.size() > 1){
-      
-      hCharge_Method2_v_HLT->SetBinContent(correctedOutput.at(0)*0.2+1, HLTOutput.at(1)*Gain[j][0]*0.2+1, 1+hCharge_Method2_v_HLT->GetBinContent(correctedOutput.at(0)*0.2+1, HLTOutput.at(1)*Gain[j][0]*0.2+1));
-      
-      hCharge_Method2_v_JAY->SetBinContent(correctedOutput.at(0)*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1, 1+hCharge_Method2_v_JAY->GetBinContent(correctedOutput.at(0)*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1));
-      
-      hCharge_HLT_v_JAY->SetBinContent(HLTOutput.at(1)*Gain[j][0]*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1, 1+hCharge_HLT_v_JAY->GetBinContent(HLTOutput.at(1)*Gain[j][0]*0.2+1, Jay2Output.at(1)*Gain[j][0]*0.2+1));
 
-      // Fill the TProfile with the % difference of energies
+    //TH2D *h45vHLT0;
+    //TH2D *h45vHLT1;
+    //TH2D *h45vHLT2;
+    if (correctedOutput.size() > 1) {
+      if(Jay0Output.size() > 1){
+	h45vHLT0->Fill( (Charge[j][4]+Charge[j][5])*Gain[j][4], Jay0Output.at(1)*Gain[j][4],1);
+	hM2vHLT0->Fill( correctedOutput.at(0), Jay0Output.at(1)*Gain[j][4],1);
+	p45vHLT0->Fill((Charge[j][4]+Charge[j][5])*Gain[j][4], (Jay0Output.at(1)-(Charge[j][4]+Charge[j][5]))/((Charge[j][4]+Charge[j][5])),1);
+	pM2vHLT0->Fill( correctedOutput.at(0), (Jay0Output.at(1)*Gain[j][4]-(correctedOutput.at(0)))/((correctedOutput.at(0))),1);
+      }      
+      if(Jay1Output.size() > 1){
+	h45vHLT1->Fill( (Charge[j][4]+Charge[j][5])*Gain[j][4], Jay1Output.at(1)*Gain[j][4],1);
+	hM2vHLT1->Fill( correctedOutput.at(0), Jay1Output.at(1)*Gain[j][4],1);
+	p45vHLT1->Fill((Charge[j][4]+Charge[j][5])*Gain[j][4], (Jay1Output.at(1)-(Charge[j][4]+Charge[j][5]))/((Charge[j][4]+Charge[j][5])),1);
+	pM2vHLT1->Fill( correctedOutput.at(0), (Jay1Output.at(1)*Gain[j][4]-(correctedOutput.at(0)))/((correctedOutput.at(0))),1);
+      }      
+
+      if(Jay2Output.size() > 1){
+	h45vHLT2->Fill( (Charge[j][4]+Charge[j][5])*Gain[j][4], Jay2Output.at(1)*Gain[j][4],1);
+	hM2vHLT2->Fill( correctedOutput.at(0), Jay2Output.at(1)*Gain[j][4],1);
+	p45vHLT2->Fill((Charge[j][4]+Charge[j][5])*Gain[j][4], (Jay2Output.at(1)-(Charge[j][4]+Charge[j][5]))/((Charge[j][4]+Charge[j][5])),1);
+	pM2vHLT2->Fill( correctedOutput.at(0), (Jay2Output.at(1)*Gain[j][4]-(correctedOutput.at(0)))/((correctedOutput.at(0))),1);
+      }      
+      
+    }
+
+      /*      // Fill the TProfile with the % difference of energies
       double resolution = 0;
       correctedOutput.at(0) > 0 ? resolution = ( correctedOutput.at(0) - Jay2Output.at(1)*Gain[j][0] )/correctedOutput.at(0) : resolution = 0 ;
-      hJayResolution->Fill(correctedOutput.at(0), resolution, 1);
+      //hJayResolution->Fill(correctedOutput.at(0), resolution, 1);
 
       // Should do something with the correctedOutput vector here, such as fill a histogram...
       if(IEta[j] < 16 && correctedOutput.size() > 1) {
@@ -363,8 +640,8 @@ void Analysis::MakeCutflow()
       } else if(IEta[j] >= 16 && correctedOutput.size() > 1){
 	CHARGE_TSTOT_HE_FIT->Fill(correctedOutput.at(0));
 	PULSE_ARRIVAL_HE_FIT->Fill(correctedOutput.at(1));
-      }
-    }
+	}*/
+      //}
   }//PulseCount
 
 }// End MakeCutflow Function
@@ -373,13 +650,116 @@ void Analysis::FillHistograms()
 {
 }
 
+void Analysis::MakePedestalPlots(int *n) {
+
+  *(n+0)+=PulseCount*10;
+
+  for (int j = 0; j < (int)PulseCount; j++) {
+    
+    std::vector<double> inputCaloSample, inputPedestal;
+    std::vector<double> inputGain;
+
+    /*    
+    TH1D *hEdepDist_least;
+    TH1D *hEdepDist_least4;
+    TH1D *hEdepDist_least_not3456;
+    TH1D *hEdepDist_least_not345;
+    TH1D *hEdepDist_least4_not3456;
+    TH1D *hEdepDist_least4_not345;*/
+
+    double all[10];
+    double not45[8];
+    double not345[7];
+    double not3456[6];
+
+    int n=0, m=0, p=0;
+    for(int i = 0; i < 10; ++i) {
+      
+      // Note: In CMSSW the "Charge" vector is not already pedestal subtracted, unlike here
+      // so I add the pedestal back to the charge so we can keep the same CMSSW implementation
+      inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
+      inputPedestal.push_back(Pedestal[j][i]);
+      inputGain.push_back(Gain[j][i]);
+
+      vHistPed[i]->Fill(Pedestal[j][i]);
+      vHistVal[i]->Fill(Pedestal[j][i]+Charge[j][i]);
+
+      Float_t tempC=Charge[j][i];//+Pedestal[j][i];
+
+      hEdepDist_all->Fill( tempC*Gain[j][i] );
+
+      all[i]=tempC*Gain[j][i];
+      
+      if (i!=3&&i!=4&&i!=5&&i!=6) {
+	hEdepDist_not3456->Fill( tempC*Gain[j][i] );
+	not3456[n]=tempC*Gain[j][i];
+	n++;
+      }
+      if (i!=4&&i!=5) {
+	hEdepDist_not45->Fill( tempC*Gain[j][i] );
+	not45[p]=tempC*Gain[j][i];
+	p++;
+      }
+      if (i!=3&&i!=4&&i!=5) {
+	hEdepDist_not345->Fill( tempC*Gain[j][i] );
+	not345[m]=tempC*Gain[j][i];
+	m++;
+      }
+
+      //if (Charge[j][i]+Pedestal[j][i]<0) *(n+1)+=1;
+      //if (Charge[j][i]<0) *(n+2)+=1;
+      
+    }
+
+    //std::sort(std::begin(all), std::end(all));
+    std::sort(std::begin(not45), std::end(not45));
+    std::sort(std::begin(not345), std::end(not345));
+    std::sort(std::begin(not3456), std::end(not3456));
+    
+    //hEdepDist_least->Fill( all[0] );
+    hEdepDist_least_not45->Fill( not45[0] );
+    hEdepDist_least_not345->Fill( not345[0] );
+    hEdepDist_least_not3456->Fill( not3456[0] );
+
+    Float_t ped45=0, ped012=0;
+
+    for (int i=0; i<4; i++) { ped45+=not45[i]; }
+    for (int i=0; i<3; i++) { ped012+=all[i]; }
+
+    ped45=ped45/4;
+    ped012=ped012/3;
+    
+    /*    for (int i=0; i<4; i++) {
+      hEdepDist_least4->Fill( all[i] );
+      hEdepDist_least4_not45->Fill( not45[i] );
+      hEdepDist_least4_not345->Fill( not345[i] );
+      hEdepDist_least4_not3456->Fill( not3456[i] );
+      }*/
+
+    for (int i=0; i<10; i++) {
+
+      hPedSub1->Fill( ped45 );
+      hPedSub2->Fill( ped012 );
+      hPedDiff->Fill( ped45 - ped012 );
+
+    }
+
+
+    //cout << Charge[j][0] << " " << Charge[j][1] << " " << Charge[j][2] << " " << Charge[j][3] << endl;
+    //pedSubFxn_->Calculate(inputCaloSample,inputPedestal,inputGain);
+    
+  }
+
+
+}
+
 void Analysis::Finish()
 {
-  gStyle->SetOptFit(1);
+  /*  gStyle->SetOptFit(1);
   TimeSlewPulse->Draw("BOX");
   TimeSlewPulse->ProfileY("Y Profile",1,-1,"do")->Fit("pol1");
   TimeSlewPulse->ProfileY("X Profile",1,-1,"do")->Fit("pol1");
-
+  */
   fout->cd();
   fout->Write();
   fout->Close();

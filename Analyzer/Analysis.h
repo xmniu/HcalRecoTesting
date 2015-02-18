@@ -9,7 +9,7 @@
 #include "TF1.h"
 #include "TCanvas.h"
 #include "TStyle.h"
-//#include "TMinuit.h"
+#include "TMinuit.h"
 
 // Include all of the other classes
 #include "HcalPulseShapes.h"
@@ -18,6 +18,7 @@
 #include "PulseShapeFitOOTPileupCorrection.h"
 #include "HLTAnalyzer.h"
 #include "HLTv2.h"
+#include "PedestalSub.h"
 
 #include <string>
 #include <vector>
@@ -63,13 +64,47 @@ class Analysis : public analysistree
   TH1D *CHARGE_TSTOT_HE_FIT;
   TH1D *PULSE_ARRIVAL_HB_FIT;
   TH1D *PULSE_ARRIVAL_HE_FIT;
+
+  TH1D *hEdepDist_all;
+  TH1D *hEdepDist_not3456;
+  TH1D *hEdepDist_not345;
+  TH1D *hEdepDist_not45;
+  TH1D *hEdepDist_least;
+  TH1D *hEdepDist_least4;
+  TH1D *hEdepDist_least_not3456;
+  TH1D *hEdepDist_least_not345;
+  TH1D *hEdepDist_least_not45;
+  TH1D *hEdepDist_least4_not3456;
+  TH1D *hEdepDist_least4_not345;
+  TH1D *hEdepDist_least4_not45;
   
-  TH2D *hCharge_Method2_v_HLT;
-  TH2D *hCharge_Method2_v_JAY;
-  TH2D *hCharge_HLT_v_JAY;
-  
-  TProfile *hHLTResolution;
-  TProfile *hJayResolution;
+  //TH2D *hCharge_Method2_v_HLT;
+  //TH2D *hCharge_Method2_v_JAY;
+  //TH2D *hCharge_HLT_v_JAY;
+
+  std::vector<TH1D*> vHistPed;
+  std::vector<TH1D*> vHistVal;
+
+  TH1D* hPedSub1;
+  TH1D* hPedSub2;
+  TH1D* hPedDiff;
+
+  TH2D *h45vHLT0;
+  TH2D *h45vHLT1;
+  TH2D *h45vHLT2;
+  TProfile *p45vHLT0;
+  TProfile *p45vHLT1;
+  TProfile *p45vHLT2;
+
+  TH2D *hM2vHLT0;
+  TH2D *hM2vHLT1;
+  TH2D *hM2vHLT2;
+  TProfile *pM2vHLT0;
+  TProfile *pM2vHLT1;
+  TProfile *pM2vHLT2;
+
+  //TProfile *hHLTResolution;
+  //TProfile *hJayResolution;
  
   Analysis(TTree *tree);
   ~Analysis();
@@ -80,13 +115,16 @@ class Analysis : public analysistree
   void MakeCutflow();
   void FillHistograms();
   void Finish();
- // void useMethod2(){psFitOOTpuCorr_ = std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection()); }
+
+  void MakePedestalPlots(int* n);
+  void useMethod2(){psFitOOTpuCorr_ = std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection()); }
          
  private:
   TFile *fout;
   std::auto_ptr<PulseShapeFitOOTPileupCorrection> psFitOOTpuCorr_= std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection());
   std::auto_ptr<HLTAnalyzer> hltThing_= std::auto_ptr<HLTAnalyzer>(new HLTAnalyzer());
   std::auto_ptr<HLTv2> hltv2_= std::auto_ptr<HLTv2>(new HLTv2());
+  std::auto_ptr<PedestalSub> pedSubFxn_= std::auto_ptr<PedestalSub>(new PedestalSub());
   HcalPulseShapes theHcalPulseShapes_;
   
    

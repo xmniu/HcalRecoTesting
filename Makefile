@@ -21,14 +21,14 @@ CXXRCS       = $(patsubst %.cxx,src/%.cxx,$(CXRCS))
 
 CXXOBJS      = $(patsubst %.cxx,$(ODIR)/%.o,$(CXRCS))
 
-OBJECTS = $(ODIR)/Analysis.o $(ODIR)/readparameters.o $(ODIR)/HybridMinimizer.o $(ODIR)/HcalTimeSlew.o $(ODIR)/HcalPulseShape.o $(ODIR)/PulseShapeFitOOTPileupCorrection.o $(ODIR)/HcalPulseShapes.o $(ODIR)/HLTAnalyzer.o $(ODIR)/HLTv2.o
+OBJECTS = $(ODIR)/Analysis.o $(ODIR)/readparameters.o $(ODIR)/HybridMinimizer.o $(ODIR)/HcalTimeSlew.o $(ODIR)/HcalPulseShape.o $(ODIR)/PulseShapeFitOOTPileupCorrection.o $(ODIR)/HcalPulseShapes.o $(ODIR)/HLTAnalyzer.o $(ODIR)/HLTv2.o $(ODIR)/PedestalSub.o
 
 all: $(OBJECTS)
 	$(CXX) $(LDFLAGS) $(LIBS) $(CXXFLAGS) -o Analysis -g $(OBJECTS) 
 
 #Analyzer/Analysis.h: Analyzer/readparameters/readparameters.h Analyzer/HybridMinimizer.h 
 
-$(ODIR)/Analysis.o: Analyzer/Analysis.cpp Analyzer/Analysis.h Analyzer/readparameters/readparameters.h Analyzer/readparameters/readparameters.cxx Analyzer/HybridMinimizer.h Analyzer/HybridMinimizer.cc Analyzer/HcalPulseShapes.h Analyzer/HcalPulseShapes.cc Analyzer/HcalTimeSlew.h Analyzer/HcalTimeSlew.cc Analyzer/PulseShapeFitOOTPileupCorrection.h Analyzer/PulseShapeFitOOTPileupCorrection.cc Analyzer/isFinite.h Analyzer/HcalPulseShape.h Analyzer/HcalPulseShape.cc Analyzer/HLTAnalyzer.h Analyzer/HLTAnalyzer.cc
+$(ODIR)/Analysis.o: Analyzer/Analysis.cpp Analyzer/Analysis.h Analyzer/readparameters/readparameters.h Analyzer/readparameters/readparameters.cxx Analyzer/HybridMinimizer.h Analyzer/HybridMinimizer.cc Analyzer/HcalPulseShapes.h Analyzer/HcalPulseShapes.cc Analyzer/HcalTimeSlew.h Analyzer/HcalTimeSlew.cc Analyzer/PulseShapeFitOOTPileupCorrection.h Analyzer/PulseShapeFitOOTPileupCorrection.cc Analyzer/isFinite.h Analyzer/HcalPulseShape.h Analyzer/HcalPulseShape.cc Analyzer/HLTAnalyzer.h Analyzer/HLTAnalyzer.cc 
 	$(CXX) $(CXXFLAGS) -c Analyzer/Analysis.cpp -o $@
 
 $(ODIR)/PulseShapeFitOOTPileupCorrection.o: Analyzer/PulseShapeFitOOTPileupCorrection.cc Analyzer/PulseShapeFitOOTPileupCorrection.h Analyzer/HcalPulseShapes.h Analyzer/HcalPulseShapes.cc Analyzer/HcalPulseShape.h Analyzer/HcalPulseShape.cc
@@ -54,6 +54,9 @@ $(ODIR)/HLTAnalyzer.o: Analyzer/HLTAnalyzer.h Analyzer/HLTAnalyzer.cc
 
 $(ODIR)/HLTv2.o: Analyzer/HLTv2.h Analyzer/HLTv2.cc
 	$(CXX) $(CXXFLAGS) -c Analyzer/HLTv2.cc -o $@
+
+$(ODIR)/PedestalSub.o: Analyzer/PedestalSub.h Analyzer/PedestalSub.cc
+	$(CXX) $(CXXFLAGS) -c Analyzer/PedestalSub.cc -o $@
 
 clean :
 	rm -f $(ODIR)/*.o

@@ -29,9 +29,9 @@ class HLTv2
   //void apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput) const;
   // This is the edited implementation for our standalone test code
   
-  void applyOnce(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTdOutput, double & RatioTS54, double & TimeSlew, double & Pulse, TF1 *slewFit) const;
-
-  void applyOnceWithTS(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTdOutput, double & RatioTS54, double & TimeSlew, double & Pulse, TF1 *slewFit) const;
+  void applyOnce(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
+  void applyOnceL4_45(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
+  void applyOnce012(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
   
   void getLandauFrac(Float_t tStart, Float_t tEnd, Float_t &sum) const;
   

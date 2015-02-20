@@ -119,6 +119,50 @@ void HLTv2::applyOnce012(const std::vector<double> & inputCharge, const std::vec
 
 }  
 
+void HLTv2::applyOnceAvgwThresh(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const {
+  
+  //cout << "start g. method" << endl;
+  Float_t corrCharge[10];
+  
+  Float_t beSub=0;
+  Float_t maxBase=1.5;
+
+  for (Int_t i=0; i<10; i++) {
+    if (i==4||i==5) continue;
+    //cout << (inputCharge[i]-inputPedestal[i]) << ", ";
+    if ( (inputCharge[i]-inputPedestal[i])<maxBase) {
+      beSub+=(inputCharge[i]-inputPedestal[i]);
+    }
+    else beSub+=maxBase;
+  }
+
+  beSub/=8;
+  
+  for (Int_t i=0; i<10; i++) {
+    corrCharge[i]=inputCharge[i]-inputPedestal[i]-beSub;
+  }
+  
+  // Iteration one assuming time slew                                                                                                                                                                       
+  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4]);
+  
+  Float_t fracL_prev=0;
+  getLandauFrac(tsShift-25, tsShift, fracL_prev);
+  Float_t fracL_intime=0;
+  getLandauFrac(tsShift,tsShift+25,fracL_intime);
+  Float_t fracL_next=0;
+  getLandauFrac(tsShift+25,tsShift+50,fracL_next);
+  
+  Float_t ch3 = ( (fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[3] - fracL_intime*fracL_next*corrCharge[4] + fracL_next*fracL_next*corrCharge[5] ) /( fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  Float_t ch4 =  (fracL_prev*corrCharge[3] - fracL_intime*corrCharge[4] + fracL_next*corrCharge[5])/( 2*fracL_prev*fracL_next-fracL_intime*fracL_intime);
+  Float_t ch5 = (fracL_prev*fracL_prev*corrCharge[3]+(fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[5]-fracL_next*fracL_intime*corrCharge[4]) / (fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  
+  HLTOutput.clear();
+  HLTOutput.push_back(ch3);
+  HLTOutput.push_back(ch4);
+  HLTOutput.push_back(ch5);
+
+}
+
 // Landau function integrated in 1 ns intervals
 //Landau pulse shape from https://indico.cern.ch/event/345283/contribution/3/material/slides/0.pdf
 //Landau turn on by default at left edge of time slice 

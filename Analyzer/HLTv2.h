@@ -32,6 +32,7 @@ class HLTv2
   void applyOnce(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
   void applyOnceL4_45(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
   void applyOnce012(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
+  void applyOnceAvgwThresh(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTOutput) const;
   
   void getLandauFrac(Float_t tStart, Float_t tEnd, Float_t &sum) const;
   

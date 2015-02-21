@@ -9,3 +9,11 @@ double HcalTimeSlew::delay(double fC, BiasSetting bias) {
   double rawDelay=tzero[bias]+slope[bias]*log(fC);
   return (rawDelay<0)?(0):((rawDelay>tmax[bias])?(tmax[bias]):(rawDelay));			   
 }
+
+double HcalTimeSlew::delay(double fC, ParaSource source, BiasSetting bias) {
+
+  if (source==TestStand) {
+    return HcalTimeSlew::delay(fC, bias);
+  }
+
+}

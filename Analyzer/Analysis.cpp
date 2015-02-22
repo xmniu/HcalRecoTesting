@@ -209,9 +209,11 @@ void Analysis::Process() {
   if (Entries==-1) Entries=fChain->GetEntries();
 
   fout = new TFile(Output_File.c_str(), "RECREATE");
-  
+
+  //DoHlt();
+  MakeTimeSlewPlots();
   //MakePedestalPlots();
-  DoHltTests();
+
   
 }
  
@@ -227,7 +229,7 @@ void Analysis::FillHistograms()
 {
 }
 
-void Analysis::DoHltTests() {
+void Analysis::DoHlt() {
 
   //=========================================================================      
   // These are the values we should set for Method 2 config with the python files
@@ -272,7 +274,7 @@ void Analysis::DoHltTests() {
   hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
 
   //Setup plots for what we care about
-  int xBins=1000, xMin=-40,xMax=60;
+  int xBins=200, xMin=-40,xMax=60;
 
   TH1D *a3 = new TH1D("a3","", xBins,xMin,xMax);
   TH1D *a4 = new TH1D("a4","", xBins,xMin,xMax);
@@ -475,6 +477,115 @@ void Analysis::MakePedestalPlots() {
     cout << "Mean for distribution " << i << ": " << vCorrHist[i]->GetMean() << endl;
     cout << "RMS for distribution " << i << ": " << vCorrHist[i]->GetRMS() << endl;
     sprintf(fname, "ped_plots/subtract_%i_%i.png", i, Condition);
+    c1->SaveAs(fname);
+  }
+
+}
+
+void Analysis::MakeTimeSlewPlots() {
+  
+  //Setup HLT pedestal/baseline subtraction module
+  pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
+
+  int nMethod=5;
+  
+  std::vector<HLTv2*> vHltMethods_;
+  std::vector<TH1D*> vHltA4Plots;
+  std::vector<TH2D*> vHltvHlt;
+
+  //I'm sorry :(
+  std::vector<std::vector<double>> vHltAns(nMethod, std::vector<double>(10));
+
+  int xBins=100, xMin=-5,xMax=5;  
+
+  for (int i=0; i<nMethod; i++) {
+    vHltMethods_.push_back(new HLTv2);
+  }
+  char hname[50];
+
+  sprintf(hname, "ts_testStand_slow");
+  vHltMethods_[0]->Init(HcalTimeSlew::TestStand, HcalTimeSlew::Slow, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+  vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
+  vHltA4Plots[0]->GetXaxis()->SetTitle("A4 with Slow test stand TS param [fC]");
+
+  sprintf(hname, "ts_testStand_med");
+  vHltMethods_[1]->Init(HcalTimeSlew::TestStand, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+  vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
+  vHltA4Plots[1]->GetXaxis()->SetTitle("A4 with Med test stand TS param [fC]");
+
+  sprintf(hname, "ts_testStand_fast");
+  vHltMethods_[2]->Init(HcalTimeSlew::TestStand, HcalTimeSlew::Fast, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+  vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
+  vHltA4Plots[2]->GetXaxis()->SetTitle("A4 with Fast test stand TS param [fC]");
+
+  sprintf(hname, "ts_data");
+  vHltMethods_[3]->Init(HcalTimeSlew::Data, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+  vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
+  vHltA4Plots[3]->GetXaxis()->SetTitle("A4 with data TS param [fC]");
+
+  sprintf(hname, "ts_mc");
+  vHltMethods_[4]->Init(HcalTimeSlew::MC, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+  vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
+  vHltA4Plots[4]->GetXaxis()->SetTitle("A4 with monte carlo TS param [fC]");
+
+  sprintf(hname, "mediumVslow");
+  vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
+  vHltvHlt[0]->GetXaxis()->SetTitle("A4 with medium test stand param [fC]");
+  vHltvHlt[0]->GetYaxis()->SetTitle("A4 with slow test stand param [fC]");
+
+  sprintf(hname, "mediumVfast");
+  vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
+  vHltvHlt[1]->GetXaxis()->SetTitle("A4 with medium test stand param [fC]");
+  vHltvHlt[1]->GetYaxis()->SetTitle("A4 with fast test stand param [fC]");
+
+  sprintf(hname, "testStandVdata");
+  vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
+  vHltvHlt[2]->GetXaxis()->SetTitle("A4 with test stand TS param [fC]");
+  vHltvHlt[2]->GetYaxis()->SetTitle("A4 with data TS param [fC]");
+
+  sprintf(hname, "testStandVmc");
+  vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
+  vHltvHlt[3]->GetXaxis()->SetTitle("A4 with test stand TS param [fC]");
+  vHltvHlt[3]->GetYaxis()->SetTitle("A4 with monte carlo TS param [fC]");
+
+  sprintf(hname, "mcVdata");
+  vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
+  vHltvHlt[4]->GetXaxis()->SetTitle("A4 with monte carlo TS param [fC]");
+  vHltvHlt[4]->GetYaxis()->SetTitle("A4 with data TS param [fC]");
+
+  for (int jentry=0; jentry<Entries;jentry++) {
+    fChain->GetEntry(jentry);
+    for (int j = 0; j < (int)PulseCount; j++) {
+      std::vector<double> inputCaloSample, inputPedestal;
+      for (int i=0; i<10; i++) {
+	inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
+	inputPedestal.push_back(Pedestal[j][i]);
+      }
+      for (int k=0; k<nMethod; k++) {
+	vHltMethods_[k]->apply(inputCaloSample,inputPedestal,vHltAns[k]);
+	vHltA4Plots[k]->Fill(vHltAns[k].at(1));
+      }
+      vHltvHlt[0]->Fill(vHltAns[1].at(1),vHltAns[0].at(1));
+      vHltvHlt[1]->Fill(vHltAns[1].at(1),vHltAns[2].at(1));
+      vHltvHlt[2]->Fill(vHltAns[1].at(1),vHltAns[3].at(1));
+      vHltvHlt[3]->Fill(vHltAns[1].at(1),vHltAns[4].at(1));
+      vHltvHlt[4]->Fill(vHltAns[3].at(1),vHltAns[4].at(1));
+    }
+  }
+
+  TCanvas *c1 = new TCanvas("c1");
+  gStyle->SetOptStat(0);
+
+  char fname[50];
+
+  for (int i=0; i<nMethod; i++) {
+    vHltA4Plots[i]->GetYaxis()->SetTitle("Counts");
+    vHltA4Plots[i]->Draw("hist");
+    sprintf(fname, "timeslew_plots/result_%i_%i.png", i, Condition);
+    c1->SaveAs(fname);
+
+    vHltvHlt[i]->Draw("colz");
+    sprintf(fname, "timeslew_plots/comp_%i_%i.png", i, Condition);
     c1->SaveAs(fname);
   }
 

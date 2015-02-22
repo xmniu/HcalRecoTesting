@@ -31,7 +31,8 @@ Baseline 4
 
 #which time slew parameterization
 #0=Test stand, medium WP
-#need to implement more params.
+#1=Data (currently from john 2/20)
+#2=MC (currently from xinmei 2/20)
 Time_Slew 0
 
 #do we care about negative charge values?

@@ -17,7 +17,6 @@
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Math/Functor.h"
 
-
 namespace HcalConst{
 
    constexpr int maxSamples = 10;

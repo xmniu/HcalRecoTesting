@@ -15,5 +15,21 @@ double HcalTimeSlew::delay(double fC, ParaSource source, BiasSetting bias) {
   if (source==TestStand) {
     return HcalTimeSlew::delay(fC, bias);
   }
+  else if (source==Data) {
+    //from john 2/20 talk: indico.cern.ch/event/375365/contribution/9/material/slides/5.pdf
+    //sketchy
+    return 13.98-3.20*log(fC+32)-2.82965+10;
+  }
+  else if (source==MC) {
+    //from xinmei 2/20 talk
+    //sketchy
+    return 16.83-3.05*log(fC+160)-1.35072+10;
+  }
 
+  std::cout << "rechit energy = " <<  std::endl;
+
+  std::cout << "What are you doing for the time slew parameterization?" << std::endl;
+
+  return 0;
+  
 }

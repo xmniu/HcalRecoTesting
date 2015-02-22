@@ -1,6 +1,12 @@
 #ifndef Analysis_H
 #define Analysis_H
 
+#include <stdio.h>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <math.h>
+
 #include "TH1D.h"
 #include "TH2D.h"
 #include "TProfile.h"
@@ -16,16 +22,11 @@
 #include "HcalPulseShape.h"
 #include "HybridMinimizer.h"
 #include "PulseShapeFitOOTPileupCorrection.h"
-#include "HLTAnalyzer.h"
 #include "HLTv2.h"
 
 #include "inverseGaussCDF.hh"
 #include "sampleQuantile.hh"
 #include "PedestalSub.h"
-
-#include <string>
-#include <vector>
-#include <math.h>
 
 #include "analysistree.h"
 
@@ -64,7 +65,8 @@ class Analysis : public analysistree
   void Finish();
 
   void MakePedestalPlots();
-  void DoHltTests();
+  void DoHlt();
+  void MakeTimeSlewPlots();
 
   void useMethod2(){psFitOOTpuCorr_ = std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection()); }
   std::auto_ptr<PedestalSub> pedSubFxn_= std::auto_ptr<PedestalSub>(new PedestalSub());

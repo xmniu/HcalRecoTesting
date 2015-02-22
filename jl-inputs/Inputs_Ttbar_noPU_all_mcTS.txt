@@ -1,11 +1,11 @@
 in_filelist jl-inputs/Files_Ttbar.txt
-Output_File Output_Ttbar_noPU_all.root
+Output_File Output_Ttbar_noPU_all_mcTS.root
 Entries -1
-Plot_Dir Ttbar_noPU_all
+Plot_Dir Ttbar_noPU_all_mcTS
 Region 0
 Condition 0
-Baseline 1
-Time_Slew 0
+Baseline 2
+Time_Slew 2
 Neg_Charges 0
 Threshold 2.7
 Quantile 0.00

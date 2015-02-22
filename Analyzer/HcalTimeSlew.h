@@ -1,6 +1,7 @@
 #ifndef CALIBCALORIMETRY_HCALALGOS_HCALTIMESLEW_H
 #define CALIBCALORIMETRY_HCALALGOS_HCALTIMESLEW_H 1
 
+#include <iostream>
 
 /** \class HcalTimeSlew
   * 

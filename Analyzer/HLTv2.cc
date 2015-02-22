@@ -11,14 +11,21 @@ HLTv2::HLTv2() {
 HLTv2::~HLTv2() { 
 }
 
-void HLTv2::apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput, HcalTimeSlew::ParaSource tsParam, HcalTimeSlew::BiasSetting bias, NegStrategy nStrat, PedestalSub pedSubFxn_) const {
+void HLTv2::Init(HcalTimeSlew::ParaSource tsParam, HcalTimeSlew::BiasSetting bias, NegStrategy nStrat, PedestalSub pedSubFxn_) {
+  fTimeSlew=tsParam;
+  fTimeSlewBias=bias;
+  fNegStrat=nStrat;
+  fPedestalSubFxn_=pedSubFxn_;
+}
+
+void HLTv2::apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput) const {
 
   std::vector<double> corrCharge;
 
-  pedSubFxn_.Calculate(inputCharge, inputPedestal, corrCharge);
+  fPedestalSubFxn_.Calculate(inputCharge, inputPedestal, corrCharge);
   
   // Iteration one assuming time slew                                                                                                                                                                       
-  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4],tsParam,bias); 
+  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4],fTimeSlew,fTimeSlewBias); 
   
   Float_t fracL_prev=0;
   getLandauFrac(tsShift-25, tsShift, fracL_prev);

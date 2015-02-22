@@ -122,6 +122,8 @@ void Analysis::Init(char* paramfile)
     catch (exception& e) {cerr<<e.what()<<endl;} 
     try {Region=rp.get<int>("Region");}
     catch (exception& e) {cerr<<e.what()<<endl;} 
+    try {Condition=rp.get<int>("Condition");}
+    catch (exception& e) {cerr<<e.what()<<endl;} 
     try {Baseline=rp.get<int>("Baseline");}
     catch (exception& e) {cerr<<e.what()<<endl;} 
     try {Time_Slew=rp.get<int>("Time_Slew");}
@@ -146,13 +148,27 @@ void Analysis::Init(char* paramfile)
   else if (Region==Barrel) { cout << "HCAL barrel. " << endl; }
   else if (Region==Endcap) { cout << "HCAL endcap. " << endl; }
 
+  if (Condition==0) {
+    cout << "With no PU. " << endl;
+  }
+  else if (Condition==50) {
+    cout << "50 ns spacing, 20 PU." << endl;
+  }
+  else if (Condition==25) {
+    cout << "25 ns spacing, 20 PU." << endl;
+  }
+  else {
+    Condition=0;
+    cout << "Unrecognized run condition, using no PU." << endl;
+  }
+
   int check=mkdir(Plot_Dir.c_str(),755);
   if (!check) {
     cout << "Saving files to: " << Plot_Dir << endl;
   }
   else {
-    cout << "Couldn't make plot directory. Not running :(" << endl;
-    exit(1);
+    cout << "Double check your plot directory exists! Something funny happened." << endl;
+    //exit(1);
   }
 
   if (Baseline==PedestalSub::DoNothing) {
@@ -168,14 +184,14 @@ void Analysis::Init(char* paramfile)
     cout << "Average baseline+pedestal subtraction with threshold: " << Threshold << endl;
   }
   else if (Baseline==PedestalSub::Percentile) {
-    cout << "Percentile-based pedestal subtraction";
-      if (Quantile<0 || Quantile>1) {
-	cout << endl << "Quantile value out of range. Not running." << endl;
-	exit(1);
-      }
-      else  {
-	cout << "with quantile value: " << Quantile << endl;
-      }
+    cout << "Percentile-based pedestal subtraction ";
+    if (Quantile<0 || Quantile>1) {
+      cout << endl << "Quantile value out of range. Not running." << endl;
+      exit(1);
+    }
+    else  {
+      cout << "with quantile value: " << Quantile << endl;
+    }
   }
 
   if (Time_Slew==HcalTimeSlew::TestStand) cout << "Using test stand medium WP time slew parameterization." << endl;
@@ -183,8 +199,6 @@ void Analysis::Init(char* paramfile)
 
   if (Neg_Charges==HLTv2::DoNothing) cout << "Not requiring positive charge outputs." << endl;
   else cout << "Sorry, you asked me to require positive charge outputs, but I don't have that implemented yet." << endl;
-
-  pedSubFxn_->Init(((PedestalSub::Method)Baseline), Threshold, Quantile);
 
   return; 
 }
@@ -194,175 +208,176 @@ void Analysis::Process() {
 
   if (Entries==-1) Entries=fChain->GetEntries();
 
-  int nbytes = 0, nb = 0;
-
-  for (int jentry=0; jentry<Entries;jentry++) {
-    //if(nevents%10==0) cout<<" "<<nevents<<"\t out of  "<<nentries<<"\t have already been processed ("<<round_nplaces((double)nevents/nentries*100,1)<<"%/100%)"<<endl;
-    nb = fChain->GetEntry(jentry);   nbytes += nb;
-
-    nevents++;
-    //DoHltTests();
-    MakeCutflow();
-    //MakePedestalPlots();
-    //FillHistograms();
-  }
- 
+  fout = new TFile(Output_File.c_str(), "RECREATE");
+  
+  //MakePedestalPlots();
+  DoHltTests();
+  
 }
  
 void Analysis::DefineHistograms()
 {
-  fout = new TFile(Output_File.c_str(), "RECREATE");
-  
-  Int_t xBins=100;
-  Int_t xMin=0;
-  Int_t xMax=100;
-
-  Int_t xBins2=50;
-  Int_t xMin2=0;
-  Int_t xMax2=100;
-
-  h45vHLT = new TH2D("h45vHLT0", "", xBins,xMin,xMax,xBins,xMin,xMax);
-  p45vHLT = new TProfile("p45vHLT0", "", xBins2,xMin2,xMax2,-10,10);
-  hM2vHLT = new TH2D("hM2vHLT0", "", xBins,xMin2,xMax2,xBins,xMin2,xMax2);
-  pM2vHLT = new TProfile("pM2vHLT0", "", xBins2,xMin2,xMax2,-10,10);
-
-  hPedSub = new TH1D("hPedSub", "", 80,-1,7);
-
-  a3 = new TH1D("a3", "", 200, -10, 10);
-  a4 = new TH1D("a4", "", 300, -25, 50);
-  a5 = new TH1D("a5", "", 200, -5, 15);
-
-  a4v3 = new TH2D("a4v3", "", 300, -25, 50, 300, -25, 50);
-  a4v5 = new TH2D("a4v5", "", 300, -25, 50, 300, -25, 50);
-  a5v3 = new TH2D("a5v3", "", 300, -25, 50, 300, -25, 50);
-
 }
 
 void Analysis::MakeCutflow() 
 {
-
-  for (int j = 0; j < (int)PulseCount; j++) {
-
-    //if (IEta[j]>16) continue;
-    //if (IEta[j]<17) continue;
-
-    //=========================================================================      
-    // These are the values we should set for Method 2 config with the python files
-    // Don't currently have a setup to input with python but we shouldn't have to
-    // change these values for our tests
-    
-    // --------------------------------------------------------------------
-    bool iPedestalConstraint = true;
-    bool iTimeConstraint = true;
-    bool iAddPulseJitter = false;
-    bool iUnConstrainedFit = false;
-    bool iApplyTimeSlew = true;
-    double iTS4Min = 5.;
-    double iTS4Max = 500.;
-    double iPulseJitter = 1.;
-    double iTimeMean = -5.5;
-    double iTimeSig = 5.;
-    double iPedMean = 0.;
-    double iPedSig = 0.5;
-    double iNoise = 1.;
-    double iTMin = -18.;
-    double iTMax = 7.;
-    double its3Chi2 = 5.;
-    double its4Chi2 = 15.;
-    double its345Chi2 = 100.;
-    double iChargeThreshold = 6.;
-    int iFitTimes = 1;
-    
-    //========================================================================
-
-    // Set the Method 2 Parameters here
-    psFitOOTpuCorr_->setPUParams(iPedestalConstraint,iTimeConstraint,iAddPulseJitter,iUnConstrainedFit,iApplyTimeSlew,
-                  iTS4Min, iTS4Max, iPulseJitter,iTimeMean,iTimeSig,iPedMean,iPedSig,iNoise,iTMin,iTMax,its3Chi2,its4Chi2,its345Chi2,
-                  iChargeThreshold,HcalTimeSlew::Medium, iFitTimes);
-
-    // Now set the Pulse shape type
-    psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
-
-    // void PulseShapeFitOOTPileupCorrection::apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput)
-    // Changing to take the inputs (vectors) Charge and Pedestal and correctedOutput vector for the moment
-    // and will remain this way unless we change the ntuple
-    
-    std::vector<double> correctedOutput, hltOutput;
-    std::vector<double> inputCaloSample, inputPedestal;
-    std::vector<double> inputGain;
-
-    for(int i = 0; i < 10; ++i) {
-      // Note: In CMSSW the "Charge" vector is not already pedestal subtracted, unlike here
-      // so I add the pedestal back to the charge so we can keep the same CMSSW implementation
-      inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
-      inputPedestal.push_back(Pedestal[j][i]);
-      inputGain.push_back(Gain[j][i]);
-    }
-
-    // Begin Method 2
-    psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,correctedOutput);
-
-    HcalTimeSlew::ParaSource useTS=(HcalTimeSlew::ParaSource)Time_Slew;
-    HLTv2::NegStrategy useNS=(HLTv2::NegStrategy)Neg_Charges;
-
-    // Begin Jay's implementation of HLT
-    hltv2_->apply(inputCaloSample,inputPedestal,hltOutput,useTS,HcalTimeSlew::Medium,useNS,*pedSubFxn_);
-
-    // ------------ Fill our comparison histograms -------------------
-    // Make sure that the output vectors have non-zero number of entries
-
-    if (correctedOutput.size() > 1) {
-      if(hltOutput.size() > 1){
-	h45vHLT->Fill( (Charge[j][4]), hltOutput.at(1),1);
-	hM2vHLT->Fill( correctedOutput.at(0)/Gain[j][0], hltOutput.at(1),1);
-	p45vHLT->Fill((Charge[j][4]), -(hltOutput.at(1)-(Charge[j][4]))/((Charge[j][4])),1);
-	pM2vHLT->Fill( correctedOutput.at(0)/Gain[j][0], -(hltOutput.at(1)*Gain[j][0]-(correctedOutput.at(0)))/((correctedOutput.at(0))),1);
-
-	a3->Fill(hltOutput.at(0));
-	a4->Fill(hltOutput.at(1));
-	a5->Fill(hltOutput.at(2));
-
-	a4v3->Fill(hltOutput.at(1), hltOutput.at(0));
-	a4v5->Fill(hltOutput.at(1), hltOutput.at(2));
-	a5v3->Fill(hltOutput.at(2), hltOutput.at(0));
-
-      }
-    }
-    
-  }//PulseCount
-
-}// End MakeCutflow Function
+}
 
 void Analysis::FillHistograms()
 {
 }
 
-void Analysis::MakePedestalPlots() {
+void Analysis::DoHltTests() {
 
-  /*  for (int j = 0; j < (int)PulseCount; j++) {
-    std::vector<double> inputCaloSample, inputPedestal;
-    std::vector<double> inputGain;
+  //=========================================================================      
+  // These are the values we should set for Method 2 config with the python files
+  // Don't currently have a setup to input with python but we shouldn't have to
+  // change these values for our tests
+  
+  // --------------------------------------------------------------------
+  bool iPedestalConstraint = true;
+  bool iTimeConstraint = true;
+  bool iAddPulseJitter = false;
+  bool iUnConstrainedFit = false;
+  bool iApplyTimeSlew = true;
+  double iTS4Min = 5.;
+  double iTS4Max = 500.;
+  double iPulseJitter = 1.;
+  double iTimeMean = -5.5;
+  double iTimeSig = 5.;
+  double iPedMean = 0.;
+  double iPedSig = 0.5;
+  double iNoise = 1.;
+  double iTMin = -18.;
+  double iTMax = 7.;
+  double its3Chi2 = 5.;
+  double its4Chi2 = 15.;
+  double its345Chi2 = 100.;
+  double iChargeThreshold = 6.;
+  int iFitTimes = 1;
+    
+  //========================================================================
+  // Set the Method 2 Parameters here
+  psFitOOTpuCorr_->setPUParams(iPedestalConstraint,iTimeConstraint,iAddPulseJitter,iUnConstrainedFit,
+			       iApplyTimeSlew,iTS4Min, iTS4Max, iPulseJitter,iTimeMean,iTimeSig,
+			       iPedMean,iPedSig,iNoise,iTMin,iTMax,its3Chi2,its4Chi2,its345Chi2,
+			       iChargeThreshold,HcalTimeSlew::Medium, iFitTimes);
+  
+  // Now set the Pulse shape type
+  psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
+
+  //Setup HLT pedestal/baseline subtraction module
+  pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
+  //Set HLT module
+  hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+
+  //Setup plots for what we care about
+  int xBins=1000, xMin=-40,xMax=60;
+
+  TH1D *a3 = new TH1D("a3","", xBins,xMin,xMax);
+  TH1D *a4 = new TH1D("a4","", xBins,xMin,xMax);
+  TH1D *a5 = new TH1D("a5","", xBins,xMin,xMax);
+
+  TH2D *a4v3 = new TH2D("a4v3","", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D *a4v5 = new TH2D("a4v5","", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D *a5v3 = new TH2D("a5v3","", xBins,xMin,xMax,xBins,xMin,xMax);
+
+  TH2D* h45vHLT = new TH2D("h45vHLT", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  TProfile* p45vHLT = new TProfile("p45vHLT", "", xBins,xMin,xMax,-10,10);
+
+  TH2D* hM2vHLT = new TH2D("hM2vHLT", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  TProfile *pM2vHLT = new TProfile("pM2vHLT", "", xBins,xMin,xMax,-10,10);
+
+  //Loop over all events
+  for (int jentry=0; jentry<Entries;jentry++) {
+    fChain->GetEntry(jentry);
+    for (int j = 0; j < (int)PulseCount; j++) {
+      if (IEta[j]>16 && Region==Barrel) continue;
+      if (IEta[j]<17 && Region==Endcap) continue;
+
+      std::vector<double> inputCaloSample, inputPedestal, inputGain;
+      std::vector<double> offlineAns, hltAns;
+
+      for (int i=0; i<10; i++) {
+	inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
+	inputPedestal.push_back(Pedestal[j][i]);
+	inputGain.push_back(Gain[j][i]);
+      }
+      
+      // Begin Method 2
+      psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,offlineAns);
+
+      // Begin Online
+      hltv2_->apply(inputCaloSample,inputPedestal,hltAns);
+
+      if (hltAns.size()>1) {
+
+	//Fill Histograms
+	a3->Fill(hltAns.at(0));
+	a4->Fill(hltAns.at(1));
+	a5->Fill(hltAns.at(2));
+
+	a4v3->Fill(hltAns.at(1), hltAns.at(0));
+	a4v5->Fill(hltAns.at(1), hltAns.at(2));	
+	a5v3->Fill(hltAns.at(2), hltAns.at(0));
+
+	h45vHLT->Fill( (Charge[j][4]), hltAns.at(1),1);
+	p45vHLT->Fill((Charge[j][4]), -(hltAns.at(1)-(Charge[j][4]))/((Charge[j][4])),1);
+
+	if (offlineAns.size()>1) {
+	  hM2vHLT->Fill( offlineAns.at(0)/Gain[j][0], hltAns.at(1),1);
+	  pM2vHLT->Fill( offlineAns.at(0)/Gain[j][0], -(hltAns.at(1)*Gain[j][0]-(offlineAns.at(0)))/((offlineAns.at(0))),1);
+	}
+      }
+      
+    }
   }
 
-  TCanvas *c1 = new TCanvas("c1");
-  gStyle->SetOptStat    (0);
+  TCanvas *c1 = new TCanvas("c1", "c1", 800, 600);
+  gStyle->SetOptStat(0);
 
-  hPedSub->GetXaxis()->SetTitle("Baseline [fC]");
-  hPedSub->GetXaxis()->SetTitleSize(0.05);
-  hPedSub->GetYaxis()->SetTitle("Counts");
-  hPedSub->GetYaxis()->SetTitleSize(0.05);
-  hPedSub->Draw("");
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/baseline.png");
-  */
-
-}
-
-void Analysis::Finish()
-{
+  a3->GetXaxis()->SetTitle("A3 [fC]");
+  a3->GetXaxis()->SetTitleSize(0.05);
+  a3->GetYaxis()->SetTitle("Counts");
+  a3->GetYaxis()->SetTitleSize(0.05);
+  a3->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a3.png");
   
-  TCanvas *c1 = new TCanvas("c1");
-  gStyle->SetOptStat    (0);
+  a4->GetXaxis()->SetTitle("A4 [fC]");
+  a4->GetXaxis()->SetTitleSize(0.05);
+  a4->GetYaxis()->SetTitle("Counts");
+  a4->GetYaxis()->SetTitleSize(0.05);
+  a4->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4.png");
   
+  a5->GetXaxis()->SetTitle("A5 [fC]");
+  a5->GetXaxis()->SetTitleSize(0.05);
+  a5->GetYaxis()->SetTitle("Counts");
+  a5->GetYaxis()->SetTitleSize(0.05);
+  a5->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5.png");
+
+  a4v3->GetXaxis()->SetTitle("A4 [fC]");
+  a4v3->GetXaxis()->SetTitleSize(0.05);
+  a4v3->GetYaxis()->SetTitle("A3 [fC]");
+  a4v3->GetYaxis()->SetTitleSize(0.05);
+  a4v3->Draw("colz");
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v3.png");
+
+  a4v5->GetXaxis()->SetTitle("A4 [fC]");
+  a4v5->GetXaxis()->SetTitleSize(0.05);
+  a4v5->GetYaxis()->SetTitle("A5 [fC]");
+  a4v5->GetYaxis()->SetTitleSize(0.05);
+  a4v5->Draw("colz");
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v5.png");
+
+  a5v3->GetXaxis()->SetTitle("A5 [fC]");
+  a5v3->GetXaxis()->SetTitleSize(0.05);
+  a5v3->GetYaxis()->SetTitle("A3 [fC]");
+  a5v3->GetYaxis()->SetTitleSize(0.05);
+  a5v3->Draw("colz");
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5v3.png");
+
   h45vHLT->GetXaxis()->SetTitle("Charge TS4 [fC]");
   h45vHLT->GetXaxis()->SetTitleSize(0.05);
   h45vHLT->GetYaxis()->SetTitle("Charge from HLT [fC]");
@@ -377,14 +392,14 @@ void Analysis::Finish()
   p45vHLT->GetYaxis()->SetRangeUser(-1,1);
   p45vHLT->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/p4vHLT.png");
-  
+
   hM2vHLT->GetXaxis()->SetTitle("M2 Charge [fC]");
   hM2vHLT->GetXaxis()->SetTitleSize(0.05);
   hM2vHLT->GetYaxis()->SetTitle("Charge from HLT [fC]");
   hM2vHLT->GetYaxis()->SetTitleSize(0.05);
   hM2vHLT->Draw("colz");
   c1->SaveAs(TString(Plot_Dir.c_str())+"/hM2vHLT.png");
-  
+
   pM2vHLT->GetXaxis()->SetTitle("M2 Charge [fC]");
   pM2vHLT->GetXaxis()->SetTitleSize(0.05);
   pM2vHLT->GetYaxis()->SetTitle("(HLT - M2)/(M2)");
@@ -393,47 +408,80 @@ void Analysis::Finish()
   pM2vHLT->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/pM2vHLT.png");
 
-  a3->GetXaxis()->SetTitle("A3 [fC]");
-  a3->GetXaxis()->SetTitleSize(0.05);
-  a3->GetYaxis()->SetTitle("Counts");
-  a3->GetYaxis()->SetTitleSize(0.05);
-  a3->Draw();
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/a3.png");
+}
 
-  a4->GetXaxis()->SetTitle("A4 [fC]");
-  a4->GetXaxis()->SetTitleSize(0.05);
-  a4->GetYaxis()->SetTitle("Counts");
-  a4->GetYaxis()->SetTitleSize(0.05);
-  a4->Draw();
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4.png");
+void Analysis::MakePedestalPlots() {
+  
+  vector<PedestalSub*> vPedSub;
+  vector<TH1D*> vCorrHist;
+  
+  char hname[50];
 
-  a5->GetXaxis()->SetTitle("A5 [fC]");
-  a5->GetXaxis()->SetTitleSize(0.05);
-  a5->GetYaxis()->SetTitle("Counts");
-  a5->GetYaxis()->SetTitleSize(0.05);
-  a5->Draw();
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5.png");
+  int nMethod=8;
 
-  a4v3->GetXaxis()->SetTitle("A4 [fC]");
-  a4v3->GetXaxis()->SetTitleSize(0.05);
-  a4v3->GetYaxis()->SetTitle("A3 [fC]");
-  a4v3->GetYaxis()->SetTitleSize(0.05);
-  a4v3->Draw();
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v3.png");
+  for (int i=0; i<nMethod; i++) {
+    vPedSub.push_back(new PedestalSub);
+    sprintf(hname, "pedMethod_%i",i);
+    vCorrHist.push_back(new TH1D(hname, "", 60, -2,10));
+  }
+  
+  vPedSub[0]->Init(PedestalSub::DoNothing, Condition, 0.0, 0.0);
+  vCorrHist[0]->GetXaxis()->SetTitle("PedestalSub::DoNothing [fC]");
 
-  a4v5->GetXaxis()->SetTitle("A4 [fC]");
-  a4v5->GetXaxis()->SetTitleSize(0.05);
-  a4v5->GetYaxis()->SetTitle("A5 [fC]");
-  a4v5->GetYaxis()->SetTitleSize(0.05);
-  a4v5->Draw();
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v5.png");
+  vPedSub[1]->Init(PedestalSub::AvgWithThresh, Condition, 1.7, 0.0);
+  vCorrHist[1]->GetXaxis()->SetTitle("PedestalSub::AvgWithThresh 1.7 [fC]");
 
-  a5v3->GetXaxis()->SetTitle("A5 [fC]");
-  a5v3->GetXaxis()->SetTitleSize(0.05);
-  a5v3->GetYaxis()->SetTitle("A3 [fC]");
-  a5v3->GetYaxis()->SetTitleSize(0.05);
-  a5v3->Draw();
-  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5v3.png");
+  vPedSub[2]->Init(PedestalSub::AvgWithThresh, Condition, 2.7, 0.0);
+  vCorrHist[2]->GetXaxis()->SetTitle("PedestalSub::AvgWithThresh 2.7 [fC]");
+
+  vPedSub[3]->Init(PedestalSub::AvgWithThreshNoPedSub, Condition, 5.0, 0.0);
+  vCorrHist[3]->GetXaxis()->SetTitle("PedestalSub::AvgWithThreshNoPedSub 5.0 [fC]");
+
+  vPedSub[4]->Init(PedestalSub::AvgWithThreshNoPedSub, Condition, 6.0, 0.0);
+  vCorrHist[4]->GetXaxis()->SetTitle("PedestalSub::AvgwithThreshNoPedSub 6.0 [fC]");
+
+  vPedSub[5]->Init(PedestalSub::Percentile, Condition, 0.0, 0.2);
+  vCorrHist[5]->GetXaxis()->SetTitle("PedestalSub::Percentile 0.2 [fC]");
+
+  vPedSub[6]->Init(PedestalSub::Percentile, Condition, 0.0, 0.3);
+  vCorrHist[6]->GetXaxis()->SetTitle("PedestalSub::Percentile 0.3 [fC]");
+
+  vPedSub[7]->Init(PedestalSub::AvgWithoutThresh, Condition, 0.0, 0.0);
+  vCorrHist[7]->GetXaxis()->SetTitle("PedestalSub::AvgWithoutThresh [fC]");
+
+  
+  for (int jentry=0; jentry<Entries;jentry++) {
+    fChain->GetEntry(jentry);
+    for (int j = 0; j < (int)PulseCount; j++) {
+      std::vector<double> inputCaloSample, inputPedestal;
+      for (int i=0; i<10; i++) {
+	inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
+	inputPedestal.push_back(Pedestal[j][i]);
+      }
+      for (int k=0; k<nMethod; k++) {
+	vCorrHist[k]->Fill(vPedSub[k]->GetCorrection(inputCaloSample, inputPedestal));
+      }
+    }
+  }
+
+  TCanvas *c1 = new TCanvas("c1");
+  gStyle->SetOptStat(0);
+
+  char fname[50];
+
+  for (int i=0; i<nMethod; i++) {
+    vCorrHist[i]->GetYaxis()->SetTitle("Counts");
+    vCorrHist[i]->Draw("hist");
+    cout << "Mean for distribution " << i << ": " << vCorrHist[i]->GetMean() << endl;
+    cout << "RMS for distribution " << i << ": " << vCorrHist[i]->GetRMS() << endl;
+    sprintf(fname, "ped_plots/subtract_%i_%i.png", i, Condition);
+    c1->SaveAs(fname);
+  }
+
+}
+
+void Analysis::Finish()
+{
   
   fout->cd();
   fout->Write();

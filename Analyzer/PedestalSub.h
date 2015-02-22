@@ -19,19 +19,21 @@ class PedestalSub
   PedestalSub();
   ~PedestalSub();
   
-  void Init(Method method, float threshold, float quantile);
+  void Init(Method method, int runCond, float threshold, float quantile);
   
   // This is the CMSSW Implementation of the apply function
   //void apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput) const;
   // This is the edited implementation for our standalone test code
   
   void Calculate(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & corrCharge) const;
+  double GetCorrection(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal) const;
 
   Method fMethod;
   float fThreshold;
   float fQuantile;
   float fNoiseCorr;
-  float fNoisePara; // need to figure out how to get this value for reak
+  float fCondition;
+  float fNoisePara;
 
  private:
   

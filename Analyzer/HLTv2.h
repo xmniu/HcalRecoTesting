@@ -26,15 +26,21 @@ class HLTv2 {
   enum NegStrategy {DoNothing=0, ReqPositive=1};  
   HLTv2();
   ~HLTv2();
+
+  void Init(HcalTimeSlew::ParaSource tsParam, HcalTimeSlew::BiasSetting bias, NegStrategy nStrat, PedestalSub pedSubFxn_);
+
   // This is the CMSSW Implementation of the apply function
   //void apply(const CaloSamples & cs, const std::vector<int> & capidvec, const HcalCalibrations & calibs, std::vector<double> & correctedOutput) const;
   // This is the edited implementation for our standalone test code
 
-  void apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput, HcalTimeSlew::ParaSource tsParam, HcalTimeSlew::BiasSetting bias, NegStrategy nStrat, PedestalSub pedSubFxn_) const;
+  void apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput) const;
   void getLandauFrac(Float_t tStart, Float_t tEnd, Float_t &sum) const;
 
-
  private:
+  HcalTimeSlew::ParaSource fTimeSlew;
+  HcalTimeSlew::BiasSetting fTimeSlewBias;
+  NegStrategy fNegStrat;
+  PedestalSub fPedestalSubFxn_;
   
 };
 

@@ -1,2 +1,0 @@
-in_filelist Input/Files_Ttbar_testSetup.txt
-Output_File Output_Ttbar_testSetup.root

@@ -401,7 +401,7 @@ int PulseShapeFitOOTPileupCorrection::pulseShapeFit(const double * energyArr, co
 //   pulse_2_temp[it] = 0;
 //   pulse_3_temp[it] = 0;
 // }
-   std::cout << "i am fitting " << std::endl;
+   //std::cout << "i am fitting " << std::endl;
    fitParsVec.clear();
    fitParsVec.push_back(chargevalfit);
    fitParsVec.push_back(timevalfit);

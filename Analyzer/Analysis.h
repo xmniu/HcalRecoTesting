@@ -39,33 +39,19 @@ class Analysis : public analysistree
 {
  public:
 
-  enum HcalRegion {All, Barrel, Endcap};
+  enum HcalRegion {All=0, Barrel=1, Endcap=2};
 
   string Input_File;
   string Output_File;
   string Plot_Dir;
   int Entries;
   int Region;
+  int Condition;
   int Baseline;
   int Time_Slew;
   int Neg_Charges;
   float Threshold;
   float Quantile;
-
-  int nevents =0;
-  
-  //Histograms
-
-  TH1D* hPedSub;
-
-  TH2D *h45vHLT;
-  TProfile *p45vHLT;
-
-  TH2D *hM2vHLT;
-  TProfile *pM2vHLT;
-
-  TH1D *a3, *a4, *a5;
-  TH2D *a4v3, *a4v5, *a5v3;
 
   Analysis(TTree *tree);
   ~Analysis();
@@ -78,6 +64,8 @@ class Analysis : public analysistree
   void Finish();
 
   void MakePedestalPlots();
+  void DoHltTests();
+
   void useMethod2(){psFitOOTpuCorr_ = std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection()); }
   std::auto_ptr<PedestalSub> pedSubFxn_= std::auto_ptr<PedestalSub>(new PedestalSub());
          
@@ -85,7 +73,6 @@ class Analysis : public analysistree
   TFile *fout;
   std::auto_ptr<PulseShapeFitOOTPileupCorrection> psFitOOTpuCorr_= std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection());
   std::auto_ptr<HLTv2> hltv2_= std::auto_ptr<HLTv2>(new HLTv2());
-
   HcalPulseShapes theHcalPulseShapes_;
 
 };

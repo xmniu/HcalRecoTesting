@@ -37,6 +37,7 @@ public :
    Int_t           IEta[5184];
    Int_t           IPhi[5184];
    Int_t           Depth[5184];
+   //Double_t        SimHitEnergy;
 
    // List of branches
    TBranch        *b_RunNumber;   //!
@@ -53,6 +54,7 @@ public :
    TBranch        *b_IEta;   //!
    TBranch        *b_IPhi;   //!
    TBranch        *b_Depth;   //!
+   //TBranch        *b_SimHitEnergy;   //!
 
    NoiseTreeData(TTree *tree=0);
    ~NoiseTreeData();
@@ -138,6 +140,7 @@ void NoiseTreeData::Init(TTree *tree)
    fChain->SetBranchAddress("IEta", IEta, &b_IEta);
    fChain->SetBranchAddress("IPhi", IPhi, &b_IPhi);
    fChain->SetBranchAddress("Depth", Depth, &b_Depth);
+   //fChain->SetBranchAddress("SimHitEnergy", &SimHitEnergy, &b_SimHitEnergy);
    Notify();
 }
 

@@ -29,13 +29,13 @@ void PedestalSub::Init(Method method=AvgWithThresh, int runCond=0, float thresho
   else if (fMethod==Percentile) {
     //need to fix these parameters;
     if (fCondition==0) {
-      fNoisePara=0.66; //estimated from AvgWithoutThresh in Ttbar
+      fNoisePara=0.92;
     }
     else if (fCondition==50) {
-      fNoisePara=1.22; //estimated from AvgWithoutThresh in Ttbar
+      fNoisePara=2.02;
     }
     else if (fCondition==25) {
-      fNoisePara=1.52; //estmiated from AvgWithoutThresh in Ttbar
+      fNoisePara=2.85;
     }
     fNoiseCorr=-inverseGaussCDF(fQuantile);
   }
@@ -46,14 +46,16 @@ void PedestalSub::Calculate(const std::vector<double> & inputCharge, const std::
 
   double bseCorr=PedestalSub::GetCorrection(inputCharge, inputPedestal);
   for (Int_t i=0; i<10; i++) {
-    if (fMethod!=AvgWithThreshNoPedSub&&fMethod!=Percentile&&fMethod!=AvgWithoutThresh) {
+    if (fMethod==AvgWithThresh||fMethod==Percentile||fMethod==AvgWithoutThresh) {
       corrCharge.push_back(inputCharge[i]-inputPedestal[i]-bseCorr);
+      std::cout << inputCharge[i]-bseCorr-inputPedestal[i] << ", ";
     }
     else {
       corrCharge.push_back(inputCharge[i]-bseCorr);
+      
     }
   }
-  
+  std::cout << std::endl;
 }
 
 double PedestalSub::GetCorrection(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal) const {
@@ -76,7 +78,7 @@ double PedestalSub::GetCorrection(const std::vector<double> & inputCharge, const
   else if (fMethod==AvgWithoutThresh) {
     for (Int_t i=0; i<10; i++) {
       if (i==4||i==5) continue;
-      baseline+=(inputCharge[i]);
+      baseline+=(inputCharge[i]-inputPedestal[i]);
     }
     baseline/=8;
   }
@@ -91,9 +93,12 @@ double PedestalSub::GetCorrection(const std::vector<double> & inputCharge, const
     baseline/=8;
   }
   else if (fMethod==Percentile) {
+    std::vector<float> tempCharge;
     for (int i=0; i<10; i++) {
+      if (i==4||i==5||i==6) continue;
+      tempCharge.push_back(inputCharge[i]-inputPedestal[i]);
     }
-    baseline=sampleQuantile<10>(&inputCharge[0],fQuantile);
+    baseline=sampleQuantile<7>(&tempCharge[0],fQuantile);
     baseline+=fNoisePara*fNoiseCorr;
   }
   

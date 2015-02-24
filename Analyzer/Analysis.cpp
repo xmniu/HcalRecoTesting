@@ -10,6 +10,8 @@
 #include <fstream>
 #include <cstdlib>
 #include <sys/stat.h>
+#include "TLine.h"
+#include "TLegend.h"
 
 using namespace std;
 
@@ -213,7 +215,6 @@ void Analysis::Process() {
   //DoHlt();
   MakeTimeSlewPlots();
   //MakePedestalPlots();
-
   
 }
  
@@ -413,7 +414,90 @@ void Analysis::DoHlt() {
 }
 
 void Analysis::MakePedestalPlots() {
+  /*
+  double QUANTILE=0.25;
+
+  TH1D *hist1 = new TH1D("hist1", "", 100,-5,45);
+  TH1D *hist2 = new TH1D("hist2", "", 100,-5,45);
+
+  double mean1=0, mean2=0, rms1=0, rms2=0;
+  double q1=0, q2=0;
+
+  for (int jentry=0; jentry<Entries;jentry++) {
+    fChain->GetEntry(jentry);
+    for (int j = 0; j < (int)PulseCount; j++) {
+      std::vector<double> tenC;
+      std::vector<double> sevenC;  
+      for (int i=0; i<10; i++) {
+	mean1+=Charge[j][i];
+	rms1+=Charge[j][i]*Charge[j][i];
+	tenC.push_back(Charge[j][i]);
+	hist1->Fill(Charge[j][i]);
+	if (i==4||i==5||i==6) continue;
+	mean2+=Charge[j][i];
+	rms2+=Charge[j][i]*Charge[j][i];
+	sevenC.push_back(Charge[j][i]);
+	hist2->Fill(Charge[j][i]);
+      }
+      //if (j==100) {
+      //for (int i=0; i<10; i++) {
+      //  cout << tenC[i] << ", ";
+      //}
+      //cout << "and 0.2 quantile is " << sampleQuantile<10>(&tenC[0],0.2) << endl;
+      //}
+      q1+=sampleQuantile<10>(&tenC[0],QUANTILE);
+      q2+=sampleQuantile<7>(&sevenC[0],QUANTILE);
+    }
+  }
+
+  mean1=mean1/(Entries*PulseCount*10);
+  mean2=mean2/(Entries*PulseCount*7);
+  rms1=TMath::Sqrt(rms1/(Entries*PulseCount*10)-mean1*mean1);
+  rms2=TMath::Sqrt(rms2/(Entries*PulseCount*7)-mean2*mean2);
+  q1=q1/(Entries*PulseCount);
+  q2=q2/(Entries*PulseCount);
+
+  cout << -inverseGaussCDF(QUANTILE) << endl;
+
+  cout << "no time slices excluded: " << mean1 << " +/- " << rms1 << endl;
+  cout << "excluding 4,5,6:         " << mean2 << " +/- " << rms2 << endl;
+  cout << "20th quantile of 10 TS:  " << q1 << endl;
+  cout << "20th quantile of 7 TS:   " << q2 << endl;
+  cout << "Would subtract:          " << q2-inverseGaussCDF(QUANTILE)*rms2 << endl;
+  cout << "or.... Would subtract:   " << q1-inverseGaussCDF(QUANTILE)*rms1 << endl;
+
+  TCanvas *c1 = new TCanvas("c1", "c1", 800, 600);
+  c1->SetLogy();
+  gStyle->SetOptStat(0);
+
+  hist1->SetLineWidth(3);
+  hist2->SetLineWidth(3);
+  hist1->GetXaxis()->SetTitle("Pedestal-Subtracted Charge [fC]");
+  hist1->GetYaxis()->SetTitle("Counts");
+  hist1->GetYaxis()->SetRangeUser(1,1e6);
+  hist1->Draw();
+
+  hist2->SetLineColor(kRed);
+  hist2->Draw("same");
   
+  TLine *line = new TLine(q2-inverseGaussCDF(QUANTILE)*rms2, 1, q2-inverseGaussCDF(QUANTILE)*rms2, 1e6);
+  line->SetLineWidth(3);
+  line->SetLineColor(kBlue);
+  line->Draw();
+  char fname[50];
+  sprintf(fname, "quantile_%.2f_%i.png", QUANTILE,Condition);
+
+  TLegend *leg = new TLegend(0.6,0.7,0.9,0.9);
+  leg->SetFillColor(0);
+  leg->SetShadowColor(0);
+  leg->AddEntry(hist1, "All TS", "l");
+  leg->AddEntry(hist2, "Not TS4/5/6", "l");
+  leg->AddEntry(line, "Avg. BSE", "l");
+  leg->Draw();
+
+  c1->SaveAs(fname);
+  */
+
   vector<PedestalSub*> vPedSub;
   vector<TH1D*> vCorrHist;
   
@@ -427,8 +511,8 @@ void Analysis::MakePedestalPlots() {
     vCorrHist.push_back(new TH1D(hname, "", 60, -2,10));
   }
   
-  vPedSub[0]->Init(PedestalSub::DoNothing, Condition, 0.0, 0.0);
-  vCorrHist[0]->GetXaxis()->SetTitle("PedestalSub::DoNothing [fC]");
+  vPedSub[0]->Init(PedestalSub::Percentile, Condition, 0.0, 0.25);
+  vCorrHist[0]->GetXaxis()->SetTitle("PedestalSub::Percentile 0.25 [fC]");
 
   vPedSub[1]->Init(PedestalSub::AvgWithThresh, Condition, 1.7, 0.0);
   vCorrHist[1]->GetXaxis()->SetTitle("PedestalSub::AvgWithThresh 1.7 [fC]");
@@ -479,15 +563,196 @@ void Analysis::MakePedestalPlots() {
     sprintf(fname, "ped_plots/subtract_%i_%i.png", i, Condition);
     c1->SaveAs(fname);
   }
-
+  
 }
 
 void Analysis::MakeTimeSlewPlots() {
   
   //Setup HLT pedestal/baseline subtraction module
-  pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
+  //pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
+  pedSubFxn_->Init(((PedestalSub::Method)4), Condition, 0.0, 0.25);
 
-  int nMethod=5;
+  //Set HLT module
+  hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+
+  int xBins=100, xMin=-10,xMax=40;
+
+  TH1D *a3j = new TH1D("a3j","", xBins,xMin,xMax);
+  TH1D *a4j = new TH1D("a4j","", xBins,xMin,xMax);
+  TH1D *a5j = new TH1D("a5j","", xBins,xMin,xMax);
+
+  TH1D *a3x = new TH1D("a3x","", xBins,xMin,xMax);
+  TH1D *a4x = new TH1D("a4x","", xBins,xMin,xMax);
+  TH1D *a5x = new TH1D("a5x","", xBins,xMin,xMax);
+
+  TH2D *a4v3j = new TH2D("a4v3j","", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D *a4v5j = new TH2D("a4v5j","", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D *a5v3j = new TH2D("a5v3j","", xBins,xMin,xMax,xBins,xMin,xMax);
+
+  TH2D *a4v3x = new TH2D("a4v3x","", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D *a4v5x = new TH2D("a4v5x","", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D *a5v3x = new TH2D("a5v3x","", xBins,xMin,xMax,xBins,xMin,xMax);
+
+  TH2D* hJvX3 = new TH2D("hJvX3", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D* hJvX4 = new TH2D("hJvX4", "", xBins,xMin,xMax,xBins,xMin,xMax);
+  TH2D* hJvX5 = new TH2D("hJvX5", "", xBins,xMin,xMax,xBins,xMin,xMax);
+
+  //Loop over all events                                                                                                                             
+  for (int jentry=0; jentry<Entries;jentry++) {
+    fChain->GetEntry(jentry);
+    for (int j = 0; j < (int)PulseCount; j++) {
+      if (IEta[j]>16 && Region==Barrel) continue;
+      if (IEta[j]<17 && Region==Endcap) continue;
+
+      std::vector<double> inputCaloSample, inputPedestal, inputGain;
+      std::vector<double> offlineAns, hltAns;
+      
+      for (int i=0; i<10; i++) {
+        inputCaloSample.push_back(Charge[j][i]+Pedestal[j][i]);
+        inputPedestal.push_back(Pedestal[j][i]);
+        inputGain.push_back(Gain[j][i]);
+      }
+
+      std::vector<double> jmlAns;
+      std::vector<double> xmnAns;
+      
+      // Begin Online
+      hltv2_->apply(inputCaloSample,inputPedestal,jmlAns);
+      hltv2_->applyXM(inputCaloSample,inputPedestal,xmnAns);
+
+      if (jmlAns.size()>1) {
+
+        a3j->Fill(jmlAns.at(0));
+        a4j->Fill(jmlAns.at(1));
+        a5j->Fill(jmlAns.at(2));
+	
+        a4v3j->Fill(jmlAns.at(1), jmlAns.at(0));
+        a4v5j->Fill(jmlAns.at(1), jmlAns.at(2));
+        a5v3j->Fill(jmlAns.at(2), jmlAns.at(0));
+      }	
+
+      if (xmnAns.size()>1) {
+
+        a3x->Fill(xmnAns.at(0));
+        a4x->Fill(xmnAns.at(1));
+        a5x->Fill(xmnAns.at(2));
+	
+        a4v3x->Fill(xmnAns.at(1), xmnAns.at(0));
+        a4v5x->Fill(xmnAns.at(1), xmnAns.at(2));
+        a5v3x->Fill(xmnAns.at(2), xmnAns.at(0));
+      }	
+
+      if (jmlAns.size()>1 && xmnAns.size()>1) {
+	hJvX3->Fill( jmlAns.at(0), xmnAns.at(0) );
+	hJvX4->Fill( jmlAns.at(1), xmnAns.at(1) );
+	hJvX5->Fill( jmlAns.at(2), xmnAns.at(2) );
+      }
+    }
+  }
+
+  TCanvas *c1 = new TCanvas("c1", "c1", 800, 600);
+  gStyle->SetOptStat(0);
+
+  hJvX3->GetXaxis()->SetTitle("Numerical Integration A3 [fC]");
+  hJvX3->GetYaxis()->SetTitle("Parameterization A3 [fC]");
+  hJvX3->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/hJvX3.png");
+
+  hJvX4->GetXaxis()->SetTitle("Numerical Integration A4 [fC]");
+  hJvX4->GetYaxis()->SetTitle("Parameterization A4 [fC]");
+  hJvX4->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/hJvX4.png");
+
+  hJvX5->GetXaxis()->SetTitle("Numerical Integration A5 [fC]");
+  hJvX5->GetYaxis()->SetTitle("Parameterization A5 [fC]");
+  hJvX5->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/hJvX5.png");
+
+  a3j->GetXaxis()->SetTitle("Numerical Integration A3 [fC]");
+  a3j->GetXaxis()->SetTitleSize(0.05);
+  a3j->GetYaxis()->SetTitle("Counts");
+  a3j->GetYaxis()->SetTitleSize(0.05);
+  a3j->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a3j.png");
+
+  a4j->GetXaxis()->SetTitle("Numerical Integration A4 [fC]");
+  a4j->GetXaxis()->SetTitleSize(0.05);
+  a4j->GetYaxis()->SetTitle("Counts");
+  a4j->GetYaxis()->SetTitleSize(0.05);
+  a4j->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4j.png");
+
+  a5j->GetXaxis()->SetTitle("Numerical Integration A5 [fC]");
+  a5j->GetXaxis()->SetTitleSize(0.05);
+  a5j->GetYaxis()->SetTitle("Counts");
+  a5j->GetYaxis()->SetTitleSize(0.05);
+  a5j->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5j.png");
+
+  a4v3j->GetXaxis()->SetTitle("N.I. A4 [fC]");
+  a4v3j->GetXaxis()->SetTitleSize(0.05);
+  a4v3j->GetYaxis()->SetTitle("N.I. A3 [fC]");
+  a4v3j->GetYaxis()->SetTitleSize(0.05);
+  a4v3j->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v3j.png");
+
+  a4v5j->GetXaxis()->SetTitle("N.I. A4 [fC]");
+  a4v5j->GetXaxis()->SetTitleSize(0.05);
+  a4v5j->GetYaxis()->SetTitle("N.I. A5 [fC]");
+  a4v5j->GetYaxis()->SetTitleSize(0.05);
+  a4v5j->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v5j.png");
+
+  a5v3j->GetXaxis()->SetTitle("N.I. A5 [fC]");
+  a5v3j->GetXaxis()->SetTitleSize(0.05);
+  a5v3j->GetYaxis()->SetTitle("N.I. A3 [fC]");
+  a5v3j->GetYaxis()->SetTitleSize(0.05);
+  a5v3j->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5v3j.png");
+
+  a3x->GetXaxis()->SetTitle("Param. A3 [fC]");
+  a3x->GetXaxis()->SetTitleSize(0.05);
+  a3x->GetYaxis()->SetTitle("Counts");
+  a3x->GetYaxis()->SetTitleSize(0.05);
+  a3x->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a3x.png");
+
+  a4x->GetXaxis()->SetTitle("Param. A4 [fC]");
+  a4x->GetXaxis()->SetTitleSize(0.05);
+  a4x->GetYaxis()->SetTitle("Counts");
+  a4x->GetYaxis()->SetTitleSize(0.05);
+  a4x->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4x.png");
+
+  a5x->GetXaxis()->SetTitle("Param. A5 [fC]");
+  a5x->GetXaxis()->SetTitleSize(0.05);
+  a5x->GetYaxis()->SetTitle("Counts");
+  a5x->GetYaxis()->SetTitleSize(0.05);
+  a5x->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5x.png");
+
+  a4v3x->GetXaxis()->SetTitle("Param. A4 [fC]");
+  a4v3x->GetXaxis()->SetTitleSize(0.05);
+  a4v3x->GetYaxis()->SetTitle("Param. A3 [fC]");
+  a4v3x->GetYaxis()->SetTitleSize(0.05);
+  a4v3x->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v3x.png");
+
+  a4v5x->GetXaxis()->SetTitle("Param. A4 [fC]");
+  a4v5x->GetXaxis()->SetTitleSize(0.05);
+  a4v5x->GetYaxis()->SetTitle("Param. A5 [fC]");
+  a4v5x->GetYaxis()->SetTitleSize(0.05);
+  a4v5x->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v5x.png");
+
+  a5v3x->GetXaxis()->SetTitle("Param. A5 [fC]");
+  a5v3x->GetXaxis()->SetTitleSize(0.05);
+  a5v3x->GetYaxis()->SetTitle("Param. A3 [fC]");
+  a5v3x->GetYaxis()->SetTitleSize(0.05);
+  a5v3x->Draw();
+  c1->SaveAs(TString(Plot_Dir.c_str())+"/a5v3x.png");  
+
+  /*  int nMethod=5;
   
   std::vector<HLTv2*> vHltMethods_;
   std::vector<TH1D*> vHltA4Plots;
@@ -496,7 +761,7 @@ void Analysis::MakeTimeSlewPlots() {
   //I'm sorry :(
   std::vector<std::vector<double>> vHltAns(nMethod, std::vector<double>(10));
 
-  int xBins=100, xMin=-5,xMax=5;  
+  int xBins=100, xMin=-5,xMax=15;
 
   for (int i=0; i<nMethod; i++) {
     vHltMethods_.push_back(new HLTv2);
@@ -521,12 +786,12 @@ void Analysis::MakeTimeSlewPlots() {
   sprintf(hname, "ts_data");
   vHltMethods_[3]->Init(HcalTimeSlew::Data, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
   vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
-  vHltA4Plots[3]->GetXaxis()->SetTitle("A4 with data TS param [fC]");
+  vHltA4Plots[3]->GetXaxis()->SetTitle("A4 with capped MC TS param [fC]");
 
   sprintf(hname, "ts_mc");
   vHltMethods_[4]->Init(HcalTimeSlew::MC, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
   vHltA4Plots.push_back(new TH1D(hname,"",xBins,xMin,xMax));
-  vHltA4Plots[4]->GetXaxis()->SetTitle("A4 with monte carlo TS param [fC]");
+  vHltA4Plots[4]->GetXaxis()->SetTitle("A4 with uncapped MC TS param [fC]");
 
   sprintf(hname, "mediumVslow");
   vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
@@ -541,17 +806,17 @@ void Analysis::MakeTimeSlewPlots() {
   sprintf(hname, "testStandVdata");
   vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
   vHltvHlt[2]->GetXaxis()->SetTitle("A4 with test stand TS param [fC]");
-  vHltvHlt[2]->GetYaxis()->SetTitle("A4 with data TS param [fC]");
+  vHltvHlt[2]->GetYaxis()->SetTitle("A4 with capped MC TS param [fC]");
 
   sprintf(hname, "testStandVmc");
   vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
   vHltvHlt[3]->GetXaxis()->SetTitle("A4 with test stand TS param [fC]");
-  vHltvHlt[3]->GetYaxis()->SetTitle("A4 with monte carlo TS param [fC]");
+  vHltvHlt[3]->GetYaxis()->SetTitle("A4 with uncapped MC TS param [fC]");
 
   sprintf(hname, "mcVdata");
   vHltvHlt.push_back(new TH2D(hname, "", xBins, xMin, xMax, xBins, xMin, xMax));
-  vHltvHlt[4]->GetXaxis()->SetTitle("A4 with monte carlo TS param [fC]");
-  vHltvHlt[4]->GetYaxis()->SetTitle("A4 with data TS param [fC]");
+  vHltvHlt[4]->GetXaxis()->SetTitle("A4 with uncapped MC TS param [fC]");
+  vHltvHlt[4]->GetYaxis()->SetTitle("A4 with capped MC TS param [fC]");
 
   for (int jentry=0; jentry<Entries;jentry++) {
     fChain->GetEntry(jentry);
@@ -588,7 +853,7 @@ void Analysis::MakeTimeSlewPlots() {
     sprintf(fname, "timeslew_plots/comp_%i_%i.png", i, Condition);
     c1->SaveAs(fname);
   }
-
+  */
 }
 
 void Analysis::Finish()

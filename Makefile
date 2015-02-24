@@ -43,8 +43,8 @@ $(ODIR)/HybridMinimizer.o: Analyzer/HybridMinimizer.h Analyzer/HybridMinimizer.c
 $(ODIR)/HcalTimeSlew.o: Analyzer/HcalTimeSlew.h Analyzer/HcalTimeSlew.cc
 	$(CXX) $(CXXFLAGS) -c Analyzer/HcalTimeSlew.cc -o $@
 
-#$(ODIR)/HcalPulseShapes.o: Analyzer/HcalPulseShapes.h Analyzer/HcalPulseShapes.cc Analyzer/HcalPulseShape.h Analyzer/HcalPulseShape.cc
-#	$(CXX) $(CXXFLAGS) -c Analyzer/HcalPulseShapes.cc -o $@
+$(ODIR)/HcalPulseShapes.o: Analyzer/HcalPulseShapes.h Analyzer/HcalPulseShapes.cc Analyzer/HcalPulseShape.h Analyzer/HcalPulseShape.cc
+	$(CXX) $(CXXFLAGS) -c Analyzer/HcalPulseShapes.cc -o $@
 
 $(ODIR)/HcalPulseShape.o: Analyzer/HcalPulseShape.h Analyzer/HcalPulseShape.cc
 	$(CXX) $(CXXFLAGS) -c Analyzer/HcalPulseShape.cc -o $@

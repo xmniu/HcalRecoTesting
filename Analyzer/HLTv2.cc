@@ -21,27 +21,65 @@ void HLTv2::Init(HcalTimeSlew::ParaSource tsParam, HcalTimeSlew::BiasSetting bia
 void HLTv2::apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput) const {
 
   std::vector<double> corrCharge;
-
   fPedestalSubFxn_.Calculate(inputCharge, inputPedestal, corrCharge);
   
-  // Iteration one assuming time slew                                                                                                                                                                       
-  Float_t tsShift=HcalTimeSlew::delay(corrCharge[4],fTimeSlew,fTimeSlewBias); 
+  Float_t tsShift3=HcalTimeSlew::delay(corrCharge[3],HcalTimeSlew::MCShift,fTimeSlewBias); 
+  Float_t tsShift4=HcalTimeSlew::delay(corrCharge[4],HcalTimeSlew::MCShift,fTimeSlewBias); 
+  Float_t tsShift5=HcalTimeSlew::delay(corrCharge[5],HcalTimeSlew::MCShift,fTimeSlewBias); 
   
-  Float_t fracL_prev=0;
-  getLandauFrac(tsShift-25, tsShift, fracL_prev);
-  Float_t fracL_intime=0;
-  getLandauFrac(tsShift,tsShift+25,fracL_intime);
-  Float_t fracL_next=0;
-  getLandauFrac(tsShift+25,tsShift+50,fracL_next);
-  
-  Float_t ch3 = ( (fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[3] - fracL_intime*fracL_next*corrCharge[4] + fracL_next*fracL_next*corrCharge[5] ) /( fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
-  Float_t ch4 =  (fracL_prev*corrCharge[3] - fracL_intime*corrCharge[4] + fracL_next*corrCharge[5])/( 2*fracL_prev*fracL_next-fracL_intime*fracL_intime);
-  Float_t ch5 = (fracL_prev*fracL_prev*corrCharge[3]+(fracL_intime*fracL_intime-fracL_prev*fracL_next)*corrCharge[5]-fracL_next*fracL_intime*corrCharge[4]) / (fracL_intime*(fracL_intime*fracL_intime-2*fracL_prev*fracL_next ) );
+  Float_t i3=0;
+  getLandauFrac(tsShift3,tsShift3+25,i3);
+  Float_t n3=0;
+  getLandauFrac(tsShift3+25,tsShift3+50,n3);
+
+  Float_t i4=0;
+  getLandauFrac(tsShift4,tsShift4+25,i4);
+  Float_t n4=0;
+  getLandauFrac(tsShift4+25,tsShift4+50,n4);
+
+  Float_t i5=0;
+  getLandauFrac(tsShift5,tsShift5+25,i5);
+  Float_t n5=0;
+  getLandauFrac(tsShift5+25,tsShift5+50,n5);
+
+  Float_t ch3=corrCharge[3]/i3;
+  Float_t ch4=(i3*corrCharge[4]-n3*corrCharge[3])/(i3*i4);
+  Float_t ch5=(n3*n4*corrCharge[3]-i3*n4*corrCharge[4]+i3*i4*corrCharge[5])/(i3*i4*i5);
 
   HLTOutput.clear();
   HLTOutput.push_back(ch3);
   HLTOutput.push_back(ch4);
   HLTOutput.push_back(ch5);
+
+}
+
+void HLTv2::applyXM(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput) const {
+
+  std::vector<double> corrCharge;
+  fPedestalSubFxn_.Calculate(inputCharge, inputPedestal, corrCharge);
+
+  double TS35[3];
+  double TS46[3];
+  double TS57[3];
+  PulseFraction(corrCharge[3], TS35);
+  PulseFraction(corrCharge[4], TS46);
+  PulseFraction(corrCharge[5], TS57);
+
+  double a3[3] = {TS35[0], TS35[1], TS35[2]};
+  double b3[3] = {0., TS46[0], TS46[1]};
+  double c3[3] = {0., 0., TS57[0]};
+  double d3[3] = {corrCharge[3], corrCharge[4], corrCharge[5]};
+
+  double deno3 = Det3(a3, b3, c3);
+
+  double A3 = Det3(d3, b3, c3) / deno3;
+  double A4 = Det3(a3, d3, c3) / deno3;
+  double A5 = Det3(a3, b3, d3) / deno3;
+
+  HLTOutput.clear();
+  HLTOutput.push_back(A3);
+  HLTOutput.push_back(A4);
+  HLTOutput.push_back(A5);
 
 }
 
@@ -69,4 +107,28 @@ void HLTv2::getLandauFrac(Float_t tStart, Float_t tEnd, Float_t &sum) const{
   }
   return;
 
+}
+
+void HLTv2::PulseFraction(Double_t fC, Double_t *TS46) const{
+
+  //static Double_t TS3par[3] = {0.44, -18.6, 5.136}; //Gaussian parameters: norm, mean, sigma for the TS3 fraction                    
+  static Double_t TS4par[3] = {0.71, -5.17, 12.23}; //Gaussian parameters: norm, mean, sigma for the TS4 fraction                      
+  static Double_t TS5par[3] = {0.258, 0.0178, 4.786e-4}; // pol2 parameters for the TS5 fraction                                       
+  static Double_t TS6par[4] = {0.06391, 0.002737, 8.396e-05, 1.475e-06};// pol3 parameters for the TS6 fraction                        
+
+  Double_t tslew = HcalTimeSlew::delay(fC,HcalTimeSlew::MC,fTimeSlewBias);
+
+  TS46[0] = TS4par[0] * TMath::Gaus(tslew,TS4par[1],TS4par[2]); // fraction of pulse in the TS4                                        
+  TS46[1] = TS5par[0] + TS5par[1]*tslew + TS5par[2]*tslew*tslew; // fraction of pulse in the T5S                                       
+  TS46[2] = TS6par[0] + TS6par[1]*tslew + TS6par[2]*tslew*tslew + TS6par[3]*tslew*tslew*tslew; //fraction of pulse in the TS6          
+
+  return;
+}
+
+double HLTv2::Det2(double *b, double *c) const{
+  return b[1]*c[2]-b[2]*c[1];
+}
+
+double HLTv2::Det3(double *a, double *b, double *c) const{
+  return a[0]*(b[1]*c[2]-b[2]*c[1])-a[1]*(b[0]*c[2]-b[2]*c[0])+a[2]*(b[0]*c[1]-b[1]*c[0]);
 }

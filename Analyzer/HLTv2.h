@@ -34,7 +34,13 @@ class HLTv2 {
   // This is the edited implementation for our standalone test code
 
   void apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput) const;
+  void applyXM(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, std::vector<double> & HLTOutput) const;
   void getLandauFrac(Float_t tStart, Float_t tEnd, Float_t &sum) const;
+
+  //void SolveEquations(Double_t *TS, Double_t *par, Double_t *fit) const;
+  double Det2(double *b, double *c) const;
+  double Det3(double *a, double *b, double *c) const;
+  void PulseFraction(Double_t fC, Double_t *TS46) const;
 
  private:
   HcalTimeSlew::ParaSource fTimeSlew;

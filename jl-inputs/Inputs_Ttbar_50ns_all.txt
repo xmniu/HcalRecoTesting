@@ -1,11 +1,11 @@
 in_filelist jl-inputs/Files_Ttbar_50ns.txt
 Output_File Output_Ttbar_50ns_all.root
 Entries -1
-Plot_Dir plots
+Plot_Dir Ttbar_50ns_all
 Region 0
 Condition 50
-Baseline 1
+Baseline 4
 Time_Slew 0
 Neg_Charges 0
-Threshold 2.7
-Quantile 0.0
+Threshold 0.0
+Quantile 0.25

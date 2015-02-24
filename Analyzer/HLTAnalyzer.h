@@ -34,7 +34,7 @@ public:
     void apply(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal, const std::vector<double> & inputGain, std::vector<double> & HLTdOutput, double & RatioTS54, double & TimeSlew, double & Pulse, TF1 *slewFit) const;
 
         void SolveEquations(Double_t *TS, Double_t *par, Double_t *fit) const;
-        double Det2(double *b, double *c) const;
+        Double Det2(double *b, double *c) const;
         double Det3(double *a, double *b, double *c) const;
         void PulseFraction(Double_t fC, Double_t *TS46, Double_t *par) const;
 

@@ -23,9 +23,9 @@ void HLTv2::apply(const std::vector<double> & inputCharge, const std::vector<dou
   std::vector<double> corrCharge;
   fPedestalSubFxn_.Calculate(inputCharge, inputPedestal, corrCharge);
   
-  Float_t tsShift3=HcalTimeSlew::delay(corrCharge[3],HcalTimeSlew::MCShift,fTimeSlewBias); 
-  Float_t tsShift4=HcalTimeSlew::delay(corrCharge[4],HcalTimeSlew::MCShift,fTimeSlewBias); 
-  Float_t tsShift5=HcalTimeSlew::delay(corrCharge[5],HcalTimeSlew::MCShift,fTimeSlewBias); 
+  Float_t tsShift3=-HcalTimeSlew::delay(corrCharge[3],HcalTimeSlew::MCShift,fTimeSlewBias); 
+  Float_t tsShift4=-HcalTimeSlew::delay(corrCharge[4],HcalTimeSlew::MCShift,fTimeSlewBias); 
+  Float_t tsShift5=-HcalTimeSlew::delay(corrCharge[5],HcalTimeSlew::MCShift,fTimeSlewBias); 
 
   Float_t i3=0;
   getLandauFrac(tsShift3,tsShift3+25,i3);

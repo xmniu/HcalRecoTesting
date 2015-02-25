@@ -197,10 +197,10 @@ void Analysis::Init(char* paramfile)
   }
 
   if (Time_Slew==HcalTimeSlew::TestStand) cout << "Using test stand medium WP time slew parameterization." << endl;
-  else cout << "Sorry, you asked for a time slew parameterization I don't have implemented yet. Using test stand medium WP time slew parameterization." << endl;
+  else cout << "Sorry, I don't know which time slew correction you asked for." << endl;
 
   if (Neg_Charges==HLTv2::DoNothing) cout << "Not requiring positive charge outputs." << endl;
-  else cout << "Sorry, you asked me to require positive charge outputs, but I don't have that implemented yet." << endl;
+  else cout << "Requiring positive charge outputs." << endl;
 
   return; 
 }
@@ -213,7 +213,7 @@ void Analysis::Process() {
   fout = new TFile(Output_File.c_str(), "RECREATE");
 
   DoHlt();
-  MakeTimeSlewPlots();
+  //MakeTimeSlewPlots();
   //MakePedestalPlots();
   
 }

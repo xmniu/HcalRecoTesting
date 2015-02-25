@@ -1,1 +1,3 @@
-ROOT/NoiseTree_Ttbar_noPU.root
+/afs/cern.ch/work/k/kfiekas/public/HCALTree_Ttbar_noPU_1000evts_File1.root
+/afs/cern.ch/work/k/kfiekas/public/HCALTree_Ttbar_noPU_1000evts_File2.root
+/afs/cern.ch/work/k/kfiekas/public/HCALTree_Ttbar_noPU_1000evts_File3.root

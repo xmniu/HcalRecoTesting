@@ -5,7 +5,7 @@ Plot_Dir Ttbar_noPU_all
 Region 0
 Condition 0
 Baseline 1
-Time_Slew 0
+Time_Slew 2
 Neg_Charges 1
 Threshold 2.7
 Quantile 0

@@ -26,7 +26,7 @@ void HLTv2::apply(const std::vector<double> & inputCharge, const std::vector<dou
   Float_t tsShift3=HcalTimeSlew::delay(corrCharge[3],HcalTimeSlew::MCShift,fTimeSlewBias); 
   Float_t tsShift4=HcalTimeSlew::delay(corrCharge[4],HcalTimeSlew::MCShift,fTimeSlewBias); 
   Float_t tsShift5=HcalTimeSlew::delay(corrCharge[5],HcalTimeSlew::MCShift,fTimeSlewBias); 
-  
+
   Float_t i3=0;
   getLandauFrac(tsShift3,tsShift3+25,i3);
   Float_t n3=0;
@@ -45,6 +45,19 @@ void HLTv2::apply(const std::vector<double> & inputCharge, const std::vector<dou
   Float_t ch3=corrCharge[3]/i3;
   Float_t ch4=(i3*corrCharge[4]-n3*corrCharge[3])/(i3*i4);
   Float_t ch5=(n3*n4*corrCharge[3]-i3*n4*corrCharge[4]+i3*i4*corrCharge[5])/(i3*i4*i5);
+
+  if (ch3<-3 && fNegStrat==HLTv2::ReqPos) {
+    ch3=-3;
+    ch4=corrCharge[4]/i4;
+    ch5=(i4*corrCharge[5]-n4*corrCharge[4])/(i4*i5);
+  }
+  
+  if (ch5<-3 && fNegStrat==HLTv2::ReqPos) {
+    std::cout << "original ch4: " << ch4 << ", ch5: " << ch5 << std::endl;
+    ch4=ch4+(ch5+3);
+    ch5=-3;
+    std::cout << "new ch4: " << ch4 << ", ch5: " << ch5 << std::endl;
+  }
 
   HLTOutput.clear();
   HLTOutput.push_back(ch3);

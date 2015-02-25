@@ -4,8 +4,8 @@ Entries -1
 Plot_Dir Ttbar_25ns_all
 Region 0
 Condition 25
-Baseline 4
+Baseline 1
 Time_Slew 0
 Neg_Charges 0
-Threshold 0.0
-Quantile 0.25
+Threshold 2.7
+Quantile 0.0

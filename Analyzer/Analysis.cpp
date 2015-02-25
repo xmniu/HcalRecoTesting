@@ -212,7 +212,7 @@ void Analysis::Process() {
 
   fout = new TFile(Output_File.c_str(), "RECREATE");
 
-  //DoHlt();
+  DoHlt();
   MakeTimeSlewPlots();
   //MakePedestalPlots();
   
@@ -275,7 +275,7 @@ void Analysis::DoHlt() {
   hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
 
   //Setup plots for what we care about
-  int xBins=200, xMin=-40,xMax=60;
+  int xBins=200, xMin=-10,xMax=40;
 
   TH1D *a3 = new TH1D("a3","", xBins,xMin,xMax);
   TH1D *a4 = new TH1D("a4","", xBins,xMin,xMax);
@@ -316,14 +316,15 @@ void Analysis::DoHlt() {
       if (hltAns.size()>1) {
 
 	//Fill Histograms
-	a3->Fill(hltAns.at(0));
-	a4->Fill(hltAns.at(1));
-	a5->Fill(hltAns.at(2));
-
-	a4v3->Fill(hltAns.at(1), hltAns.at(0));
-	a4v5->Fill(hltAns.at(1), hltAns.at(2));	
-	a5v3->Fill(hltAns.at(2), hltAns.at(0));
-
+	if (hltAns.at(2)>-4) {
+	  a3->Fill(hltAns.at(0));
+	  a4->Fill(hltAns.at(1));
+	  a5->Fill(hltAns.at(2));
+	  
+	  a4v3->Fill(hltAns.at(1), hltAns.at(0));
+	  a4v5->Fill(hltAns.at(1), hltAns.at(2));	
+	  a5v3->Fill(hltAns.at(2), hltAns.at(0));
+	}
 	h45vHLT->Fill( (Charge[j][4]), hltAns.at(1),1);
 	p45vHLT->Fill((Charge[j][4]), -(hltAns.at(1)-(Charge[j][4]))/((Charge[j][4])),1);
 
@@ -570,10 +571,13 @@ void Analysis::MakeTimeSlewPlots() {
   
   //Setup HLT pedestal/baseline subtraction module
   //pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
-  pedSubFxn_->Init(((PedestalSub::Method)4), Condition, 0.0, 0.25);
+  pedSubFxn_->Init(((PedestalSub::Method)1), Condition, 2.7, 0.0);
 
   //Set HLT module
-  hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
+  HLTv2* hlt_wNeg= new HLTv2;
+  HLTv2* hlt_noNeg= new HLTv2;
+  hlt_wNeg->Init(HcalTimeSlew::MCShift, HcalTimeSlew::Medium, (HLTv2::NegStrategy)0, *pedSubFxn_);
+  hlt_noNeg->Init(HcalTimeSlew::MCShift, HcalTimeSlew::Medium, (HLTv2::NegStrategy)1, *pedSubFxn_);
 
   int xBins=100, xMin=-10,xMax=40;
 
@@ -617,8 +621,8 @@ void Analysis::MakeTimeSlewPlots() {
       std::vector<double> xmnAns;
       
       // Begin Online
-      hltv2_->apply(inputCaloSample,inputPedestal,jmlAns);
-      hltv2_->applyXM(inputCaloSample,inputPedestal,xmnAns);
+      hlt_wNeg->apply(inputCaloSample,inputPedestal,jmlAns);
+      hlt_noNeg->apply(inputCaloSample,inputPedestal,xmnAns);
 
       if (jmlAns.size()>1) {
 
@@ -653,101 +657,101 @@ void Analysis::MakeTimeSlewPlots() {
   TCanvas *c1 = new TCanvas("c1", "c1", 800, 600);
   gStyle->SetOptStat(0);
 
-  hJvX3->GetXaxis()->SetTitle("Numerical Integration A3 [fC]");
-  hJvX3->GetYaxis()->SetTitle("Parameterization A3 [fC]");
+  hJvX3->GetXaxis()->SetTitle("No Neg. Corr. A3 [fC]");
+  hJvX3->GetYaxis()->SetTitle("With Neg. Corr. A3 [fC]");
   hJvX3->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/hJvX3.png");
 
-  hJvX4->GetXaxis()->SetTitle("Numerical Integration A4 [fC]");
-  hJvX4->GetYaxis()->SetTitle("Parameterization A4 [fC]");
+  hJvX4->GetXaxis()->SetTitle("No Neg. Corr. A4 [fC]");
+  hJvX4->GetYaxis()->SetTitle("With Neg. Corr. A4 [fC]");
   hJvX4->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/hJvX4.png");
 
-  hJvX5->GetXaxis()->SetTitle("Numerical Integration A5 [fC]");
-  hJvX5->GetYaxis()->SetTitle("Parameterization A5 [fC]");
+  hJvX5->GetXaxis()->SetTitle("No Neg. Corr. A5 [fC]");
+  hJvX5->GetYaxis()->SetTitle("With Neg. Corr. A5 [fC]");
   hJvX5->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/hJvX5.png");
 
-  a3j->GetXaxis()->SetTitle("Numerical Integration A3 [fC]");
+  a3j->GetXaxis()->SetTitle("No Neg. Corr. A3 [fC]");
   a3j->GetXaxis()->SetTitleSize(0.05);
   a3j->GetYaxis()->SetTitle("Counts");
   a3j->GetYaxis()->SetTitleSize(0.05);
   a3j->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a3j.png");
 
-  a4j->GetXaxis()->SetTitle("Numerical Integration A4 [fC]");
+  a4j->GetXaxis()->SetTitle("No Neg. Corr. A4 [fC]");
   a4j->GetXaxis()->SetTitleSize(0.05);
   a4j->GetYaxis()->SetTitle("Counts");
   a4j->GetYaxis()->SetTitleSize(0.05);
   a4j->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a4j.png");
 
-  a5j->GetXaxis()->SetTitle("Numerical Integration A5 [fC]");
+  a5j->GetXaxis()->SetTitle("No Neg. Corr. A5 [fC]");
   a5j->GetXaxis()->SetTitleSize(0.05);
   a5j->GetYaxis()->SetTitle("Counts");
   a5j->GetYaxis()->SetTitleSize(0.05);
   a5j->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a5j.png");
 
-  a4v3j->GetXaxis()->SetTitle("N.I. A4 [fC]");
+  a4v3j->GetXaxis()->SetTitle("No Neg. Corr.  A4 [fC]");
   a4v3j->GetXaxis()->SetTitleSize(0.05);
-  a4v3j->GetYaxis()->SetTitle("N.I. A3 [fC]");
+  a4v3j->GetYaxis()->SetTitle("No Neg. Corr.  A3 [fC]");
   a4v3j->GetYaxis()->SetTitleSize(0.05);
   a4v3j->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v3j.png");
 
-  a4v5j->GetXaxis()->SetTitle("N.I. A4 [fC]");
+  a4v5j->GetXaxis()->SetTitle("No Neg. Corr.  A4 [fC]");
   a4v5j->GetXaxis()->SetTitleSize(0.05);
-  a4v5j->GetYaxis()->SetTitle("N.I. A5 [fC]");
+  a4v5j->GetYaxis()->SetTitle("No Neg. Corr.  A5 [fC]");
   a4v5j->GetYaxis()->SetTitleSize(0.05);
   a4v5j->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v5j.png");
 
-  a5v3j->GetXaxis()->SetTitle("N.I. A5 [fC]");
+  a5v3j->GetXaxis()->SetTitle("No Neg. Corr.  A5 [fC]");
   a5v3j->GetXaxis()->SetTitleSize(0.05);
-  a5v3j->GetYaxis()->SetTitle("N.I. A3 [fC]");
+  a5v3j->GetYaxis()->SetTitle("No Neg. Corr.  A3 [fC]");
   a5v3j->GetYaxis()->SetTitleSize(0.05);
   a5v3j->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a5v3j.png");
 
-  a3x->GetXaxis()->SetTitle("Param. A3 [fC]");
+  a3x->GetXaxis()->SetTitle("With Neg. Corr.  A3 [fC]");
   a3x->GetXaxis()->SetTitleSize(0.05);
   a3x->GetYaxis()->SetTitle("Counts");
   a3x->GetYaxis()->SetTitleSize(0.05);
   a3x->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a3x.png");
 
-  a4x->GetXaxis()->SetTitle("Param. A4 [fC]");
+  a4x->GetXaxis()->SetTitle("With Neg. Corr.  A4 [fC]");
   a4x->GetXaxis()->SetTitleSize(0.05);
   a4x->GetYaxis()->SetTitle("Counts");
   a4x->GetYaxis()->SetTitleSize(0.05);
   a4x->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a4x.png");
 
-  a5x->GetXaxis()->SetTitle("Param. A5 [fC]");
+  a5x->GetXaxis()->SetTitle("With Neg. Corr.  A5 [fC]");
   a5x->GetXaxis()->SetTitleSize(0.05);
   a5x->GetYaxis()->SetTitle("Counts");
   a5x->GetYaxis()->SetTitleSize(0.05);
   a5x->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a5x.png");
 
-  a4v3x->GetXaxis()->SetTitle("Param. A4 [fC]");
+  a4v3x->GetXaxis()->SetTitle("With Neg. Corr.  A4 [fC]");
   a4v3x->GetXaxis()->SetTitleSize(0.05);
-  a4v3x->GetYaxis()->SetTitle("Param. A3 [fC]");
+  a4v3x->GetYaxis()->SetTitle("With Neg. Corr.  A3 [fC]");
   a4v3x->GetYaxis()->SetTitleSize(0.05);
   a4v3x->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v3x.png");
 
-  a4v5x->GetXaxis()->SetTitle("Param. A4 [fC]");
+  a4v5x->GetXaxis()->SetTitle("With Neg. Corr.  A4 [fC]");
   a4v5x->GetXaxis()->SetTitleSize(0.05);
-  a4v5x->GetYaxis()->SetTitle("Param. A5 [fC]");
+  a4v5x->GetYaxis()->SetTitle("With Neg. Corr.  A5 [fC]");
   a4v5x->GetYaxis()->SetTitleSize(0.05);
   a4v5x->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a4v5x.png");
 
-  a5v3x->GetXaxis()->SetTitle("Param. A5 [fC]");
+  a5v3x->GetXaxis()->SetTitle("With Neg. Corr.  A5 [fC]");
   a5v3x->GetXaxis()->SetTitleSize(0.05);
-  a5v3x->GetYaxis()->SetTitle("Param. A3 [fC]");
+  a5v3x->GetYaxis()->SetTitle("With Neg. Corr.  A3 [fC]");
   a5v3x->GetYaxis()->SetTitleSize(0.05);
   a5v3x->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/a5v3x.png");  

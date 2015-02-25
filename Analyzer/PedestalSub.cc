@@ -48,14 +48,11 @@ void PedestalSub::Calculate(const std::vector<double> & inputCharge, const std::
   for (Int_t i=0; i<10; i++) {
     if (fMethod==AvgWithThresh||fMethod==Percentile||fMethod==AvgWithoutThresh) {
       corrCharge.push_back(inputCharge[i]-inputPedestal[i]-bseCorr);
-      std::cout << inputCharge[i]-bseCorr-inputPedestal[i] << ", ";
     }
     else {
       corrCharge.push_back(inputCharge[i]-bseCorr);
-      
     }
   }
-  std::cout << std::endl;
 }
 
 double PedestalSub::GetCorrection(const std::vector<double> & inputCharge, const std::vector<double> & inputPedestal) const {

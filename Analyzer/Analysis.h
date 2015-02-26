@@ -23,6 +23,7 @@
 #include "HybridMinimizer.h"
 #include "PulseShapeFitOOTPileupCorrection.h"
 #include "HLTv2.h"
+#include "TimeSlewPar.h"
 
 #include "inverseGaussCDF.hh"
 #include "sampleQuantile.hh"
@@ -54,6 +55,13 @@ class Analysis : public analysistree
   float Threshold;
   float Quantile;
 
+  TH2F *TimeSlewPulse_All;
+  TH2F *TimeSlewPulse_HB;
+  TH2F *TimeSlewPulse_HE;
+
+  TF1 *slewFit;
+  TF1 *logtimeslewFit;
+
   Analysis(TTree *tree);
   ~Analysis();
 
@@ -75,6 +83,7 @@ class Analysis : public analysistree
   TFile *fout;
   std::auto_ptr<PulseShapeFitOOTPileupCorrection> psFitOOTpuCorr_= std::auto_ptr<PulseShapeFitOOTPileupCorrection>(new PulseShapeFitOOTPileupCorrection());
   std::auto_ptr<HLTv2> hltv2_= std::auto_ptr<HLTv2>(new HLTv2());
+  std::auto_ptr<TimeSlewPar> TimeSlewParameters = std::auto_ptr<TimeSlewPar>(new TimeSlewPar());
   HcalPulseShapes theHcalPulseShapes_;
 
 };

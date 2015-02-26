@@ -220,6 +220,15 @@ void Analysis::Process() {
  
 void Analysis::DefineHistograms()
 {
+  TimeSlewPulse_All = new TH2F("TimeSlewPulse_All","Time Slew [ns] vs Charge in TS4 [fC]",25,-14.5,10.5,100,10.,510.);
+  TimeSlewPulse_HB = new TH2F("TimeSlewPulse_HB","Time Slew [ns] vs Charge in TS4 [fC] in HB",25,-14.5,10.5,100,10.,510.);
+  TimeSlewPulse_HE = new TH2F("TimeSlewPulse_HE","Time Slew [ns] vs Charge in TS4 [fC] in HE",25,-14.5,10.5,100,10.,510.);
+
+  logtimeslewFit = new TF1("logtimeslewFit", "[0]+[1]*TMath::Log(x+[2])",10.,510.);
+  logtimeslewFit->SetParameters(9.45262e+00, -1.94806e+00, 8.81768e+01);
+
+  slewFit = new TF1("slewFit","pol4*expo(5)",-10.,14.);
+  slewFit->SetParameters(1.07618e-02,-4.19145e-06,2.70310e-05,-8.71584e-08,1.86597e-07,3.59216e+00,-1.02057e-01);
 }
 
 void Analysis::MakeCutflow() 
@@ -271,6 +280,7 @@ void Analysis::DoHlt() {
 
   //Setup HLT pedestal/baseline subtraction module
   pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
+
   //Set HLT module
   hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
 
@@ -309,6 +319,13 @@ void Analysis::DoHlt() {
       
       // Begin Method 2
       //psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,offlineAns);
+
+	//Do Time Slew Parameterization
+	double RatioTS54 = 0, TimeSlew = 0., Pulse = 0.;
+	TimeSlewParameters->getParameters(inputCaloSample, inputPedestal, RatioTS54, TimeSlew, Pulse, slewFit, *pedSubFxn_);
+	TimeSlewPulse_All->Fill(TimeSlew, Pulse);
+	if(IEta[j] < 16) TimeSlewPulse_HB->Fill(TimeSlew, Pulse);
+	if(IEta[j] >= 16) TimeSlewPulse_HE->Fill(TimeSlew, Pulse);
 
       // Begin Online
       hltv2_->apply(inputCaloSample,inputPedestal,hltAns);
@@ -861,6 +878,13 @@ void Analysis::MakeTimeSlewPlots() {
 
 void Analysis::Finish()
 {
+
+  gStyle->SetOptFit(1);
+  TimeSlewPulse_All->Draw("BOX");
+  TimeSlewPulse_All->ProfileY("Fit Y Profile",1,-1,"do")->Fit("logtimeslewFit");
+
+  TimeSlewPulse_HB->ProfileY("HBFit Y Profile",1,-1,"do")->Fit("logtimeslewFit");
+  TimeSlewPulse_HE->ProfileY("HEFit Y Profile",1,-1,"do")->Fit("logtimeslewFit");
   
   fout->cd();
   fout->Write();

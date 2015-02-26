@@ -261,13 +261,13 @@ void Analysis::DoHlt() {
     
   //========================================================================
   // Set the Method 2 Parameters here
-  psFitOOTpuCorr_->setPUParams(iPedestalConstraint,iTimeConstraint,iAddPulseJitter,iUnConstrainedFit,
-			       iApplyTimeSlew,iTS4Min, iTS4Max, iPulseJitter,iTimeMean,iTimeSig,
-			       iPedMean,iPedSig,iNoise,iTMin,iTMax,its3Chi2,its4Chi2,its345Chi2,
-			       iChargeThreshold,HcalTimeSlew::Medium, iFitTimes);
+  //psFitOOTpuCorr_->setPUParams(iPedestalConstraint,iTimeConstraint,iAddPulseJitter,iUnConstrainedFit,
+  //iApplyTimeSlew,iTS4Min, iTS4Max, iPulseJitter,iTimeMean,iTimeSig,
+  //				 iPedMean,iPedSig,iNoise,iTMin,iTMax,its3Chi2,its4Chi2,its345Chi2,
+  //				 iChargeThreshold,HcalTimeSlew::Medium, iFitTimes);
   
   // Now set the Pulse shape type
-  psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
+  //psFitOOTpuCorr_->setPulseShapeTemplate(theHcalPulseShapes_.getShape(105));
 
   //Setup HLT pedestal/baseline subtraction module
   pedSubFxn_->Init(((PedestalSub::Method)Baseline), Condition, Threshold, Quantile);
@@ -275,9 +275,9 @@ void Analysis::DoHlt() {
   hltv2_->Init((HcalTimeSlew::ParaSource)Time_Slew, HcalTimeSlew::Medium, (HLTv2::NegStrategy)Neg_Charges, *pedSubFxn_);
 
   //Setup plots for what we care about
-  int xBins=200, xMin=-10,xMax=40;
+  //int xBins=200, xMin=-10,xMax=40;
 
-  TH1D *a3 = new TH1D("a3","", xBins,xMin,xMax);
+  /*  TH1D *a3 = new TH1D("a3","", xBins,xMin,xMax);
   TH1D *a4 = new TH1D("a4","", xBins,xMin,xMax);
   TH1D *a5 = new TH1D("a5","", xBins,xMin,xMax);
 
@@ -289,7 +289,7 @@ void Analysis::DoHlt() {
   TProfile* p45vHLT = new TProfile("p45vHLT", "", xBins,xMin,xMax,-10,10);
 
   TH2D* hM2vHLT = new TH2D("hM2vHLT", "", xBins,xMin,xMax,xBins,xMin,xMax);
-  TProfile *pM2vHLT = new TProfile("pM2vHLT", "", xBins,xMin,xMax,-10,10);
+  TProfile *pM2vHLT = new TProfile("pM2vHLT", "", xBins,xMin,xMax,-10,10);*/
 
   //Loop over all events
   for (int jentry=0; jentry<Entries;jentry++) {
@@ -308,23 +308,22 @@ void Analysis::DoHlt() {
       }
       
       // Begin Method 2
-      psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,offlineAns);
+      //psFitOOTpuCorr_->apply(inputCaloSample,inputPedestal,inputGain,offlineAns);
 
       // Begin Online
       hltv2_->apply(inputCaloSample,inputPedestal,hltAns);
 
-      if (hltAns.size()>1) {
+      /*      if (hltAns.size()>1) {
 
 	//Fill Histograms
-	if (hltAns.at(2)>-4) {
-	  a3->Fill(hltAns.at(0));
-	  a4->Fill(hltAns.at(1));
-	  a5->Fill(hltAns.at(2));
-	  
-	  a4v3->Fill(hltAns.at(1), hltAns.at(0));
-	  a4v5->Fill(hltAns.at(1), hltAns.at(2));	
-	  a5v3->Fill(hltAns.at(2), hltAns.at(0));
-	}
+	a3->Fill(hltAns.at(0));
+	a4->Fill(hltAns.at(1));
+	a5->Fill(hltAns.at(2));
+	
+	a4v3->Fill(hltAns.at(1), hltAns.at(0));
+	a4v5->Fill(hltAns.at(1), hltAns.at(2));	
+	a5v3->Fill(hltAns.at(2), hltAns.at(0));
+
 	h45vHLT->Fill( (Charge[j][4]), hltAns.at(1),1);
 	p45vHLT->Fill((Charge[j][4]), -(hltAns.at(1)-(Charge[j][4]))/((Charge[j][4])),1);
 
@@ -333,10 +332,10 @@ void Analysis::DoHlt() {
 	  pM2vHLT->Fill( offlineAns.at(0)/Gain[j][0], -(hltAns.at(1)*Gain[j][0]-(offlineAns.at(0)))/((offlineAns.at(0))),1);
 	}
       }
-      
+      */
     }
   }
-
+  /*
   TCanvas *c1 = new TCanvas("c1", "c1", 800, 600);
   gStyle->SetOptStat(0);
 
@@ -411,7 +410,7 @@ void Analysis::DoHlt() {
   pM2vHLT->GetYaxis()->SetRangeUser(-1,1);
   pM2vHLT->Draw();
   c1->SaveAs(TString(Plot_Dir.c_str())+"/pM2vHLT.png");
-
+  */
 }
 
 void Analysis::MakePedestalPlots() {
@@ -509,7 +508,7 @@ void Analysis::MakePedestalPlots() {
   for (int i=0; i<nMethod; i++) {
     vPedSub.push_back(new PedestalSub);
     sprintf(hname, "pedMethod_%i",i);
-    vCorrHist.push_back(new TH1D(hname, "", 60, -2,10));
+    vCorrHist.push_back(new TH1D(hname, "", 60, -2,4));
   }
   
   vPedSub[0]->Init(PedestalSub::Percentile, Condition, 0.0, 0.25);
@@ -519,7 +518,7 @@ void Analysis::MakePedestalPlots() {
   vCorrHist[1]->GetXaxis()->SetTitle("PedestalSub::AvgWithThresh 1.7 [fC]");
 
   vPedSub[2]->Init(PedestalSub::AvgWithThresh, Condition, 2.7, 0.0);
-  vCorrHist[2]->GetXaxis()->SetTitle("PedestalSub::AvgWithThresh 2.7 [fC]");
+  vCorrHist[2]->GetXaxis()->SetTitle("Baseline estimate <Min[2.7,Q]> [fC]");
 
   vPedSub[3]->Init(PedestalSub::AvgWithThreshNoPedSub, Condition, 5.0, 0.0);
   vCorrHist[3]->GetXaxis()->SetTitle("PedestalSub::AvgWithThreshNoPedSub 5.0 [fC]");
@@ -576,8 +575,8 @@ void Analysis::MakeTimeSlewPlots() {
   //Set HLT module
   HLTv2* hlt_wNeg= new HLTv2;
   HLTv2* hlt_noNeg= new HLTv2;
-  hlt_wNeg->Init(HcalTimeSlew::MCShift, HcalTimeSlew::Medium, (HLTv2::NegStrategy)0, *pedSubFxn_);
-  hlt_noNeg->Init(HcalTimeSlew::MCShift, HcalTimeSlew::Medium, (HLTv2::NegStrategy)1, *pedSubFxn_);
+  hlt_wNeg->Init(HcalTimeSlew::MC, HcalTimeSlew::Medium, (HLTv2::NegStrategy)0, *pedSubFxn_);
+  hlt_noNeg->Init(HcalTimeSlew::MC, HcalTimeSlew::Medium, (HLTv2::NegStrategy)1, *pedSubFxn_);
 
   int xBins=100, xMin=-10,xMax=40;
 

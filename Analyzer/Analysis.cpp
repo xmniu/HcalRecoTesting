@@ -225,20 +225,43 @@ void Analysis::DefineHistograms()
  
 void Analysis::TSP()
 {
-  TimeSlewPulse_All = new TH2F("TimeSlewPulse_All","Time Slew [ns] vs Charge in TS4 [fC]",25,-14.5,10.5,100,0.,1000.);
+  TimeSlewPulse_All = new TH2F("TimeSlewPulse_All","Time Slew [ns] vs Charge in TS4 [fC]",25,-14.5,10.5,199,5.,1000.);
   TimeSlewPulse_All->Sumw2();
-  TimeSlewPulse_HB = new TH2F("TimeSlewPulse_HB","Time Slew [ns] vs Charge in TS4 [fC] in HB",25,-14.5,10.5,100,0.,1000.);
+  TimeSlewPulse_HB = new TH2F("TimeSlewPulse_HB","Time Slew [ns] vs Charge in TS4 [fC] in HB",25,-14.5,10.5,199,5.,1000.);
   TimeSlewPulse_HB->Sumw2();
-  TimeSlewPulse_HE = new TH2F("TimeSlewPulse_HE","Time Slew [ns] vs Charge in TS4 [fC] in HE",25,-14.5,10.5,100,0.,1000.);
+  TimeSlewPulse_HE = new TH2F("TimeSlewPulse_HE","Time Slew [ns] vs Charge in TS4 [fC] in HE",25,-14.5,10.5,199,5.,1000.);
   TimeSlewPulse_HE->Sumw2();
 
-  //Logrithmic
-  timeslewFit = new TF1("timeslewFit", "[0]+[1]*TMath::Log(x+[2])",0.,1000.);
-  timeslewFit->SetParameters(9.27591e+02,-9.71576e+01, 1.39366e+04);
+	//For Stability Check
+        for(int i = 0; i < 59; i++){
+                string si = int2string(i - 29);
+                for(int j = 0; j < 72; j++){
+                        string sj = int2string(j+1);
+                        for(int k = 0; k < 3; k++){
+                                string sk = int2string(k+1);
+                                TimeSlewPulse[i][j][k] = new TH2F((string("TimeSlewPulse_")+si+string("_")+sj+string("_")+sk).c_str(),(string("TimeSlewPulse")+si+string("_")+sj+string("_")+sk).c_str(),25,-14.5,10.5,199,5.,1000.);
+                        }
+                }
+        }
 
-  //Linear
-//  timeslewFit = new TF1("timeslewFit", "[0]+[1]*x",0.,1000.);
-//  timeslewFit->SetParameters(4.61732e-01,-6.77490e-03);
+        for(int k = 0; k < 3; k++){
+                string sk = int2string(k+1);
+                Par0[k] = new TH2F((string("P0_"+sk).c_str()),(string("P0 in Depth "+sk).c_str()),59,-29.5,29.5,72,0.5,72.5);
+                Par1[k] = new TH2F((string("P1_"+sk).c_str()),(string("P1 in Depth "+sk).c_str()),59,-29.5,29.5,72,0.5,72.5);
+                Par2[k] = new TH2F((string("P2_"+sk).c_str()),(string("P2 in Depth "+sk).c_str()),59,-29.5,29.5,72,0.5,72.5);
+        }
+
+
+//  Logrithmic
+//  timeslewFit = new TF1("timeslewFit", "[0]+[1]*TMath::Log(x+[2])",0.,1000.);
+//  timeslewFit->SetParameters(9.27591e+02,-9.71576e+01, 1.39366e+04);
+
+//  Linear
+//  timeslewFit = new TF1("timeslewFit", "[0]+[1]*x",0.,500.);
+//  timeslewFit->SetParameters(2.66677e-01, -8.69561e-03);//(0-500)
+
+  timeslewFit = new TF1("timeslewFit", "(x<500)*([0]+[1]*x) + (x>=500)*([2])",0.,1000.);
+  timeslewFit->SetParameters(9.88222e-01,-1.15620e-02,-4.17952e+00);//
 
   slewFit = new TF1("slewFit","pol4*expo(5)",-10.,14.);
   slewFit->SetParameters(1.07618e-02,-4.19145e-06,2.70310e-05,-8.71584e-08,1.86597e-07,3.59216e+00,-1.02057e-01);
@@ -259,6 +282,7 @@ void Analysis::TSP()
 
     double RatioTS54 = 0, TimeSlew = 0., Pulse = 0.;
     TimeSlewParameters->getParameters(inputCaloSample, inputPedestal, RatioTS54, TimeSlew, Pulse, slewFit, *pedSubFxn_);
+    TimeSlewPulse[int(IEta[j]+29)][int(IPhi[j]-1)][int(Depth[j]-1)]->Fill(TimeSlew, Pulse);
     TimeSlewPulse_All->Fill(TimeSlew, Pulse);
     if(IEta[j] < 16) TimeSlewPulse_HB->Fill(TimeSlew, Pulse);
     if(IEta[j] >= 16) TimeSlewPulse_HE->Fill(TimeSlew, Pulse);
@@ -266,10 +290,32 @@ void Analysis::TSP()
   }
   gStyle->SetOptFit(1);
   TimeSlewPulse_All->Draw("BOX");
-  TimeSlewPulse_All->ProfileY("Fit Y Profile",1,-1,"dos")->Fit("timeslewFit");
+  TimeSlewPulse_All->ProfileY("Fit Y Profile",1,-1,"do")->Fit("timeslewFit");
   timeslewFit->Write();
-  TimeSlewPulse_HB->ProfileY("HBFit Y Profile",1,-1,"dos")->Fit("timeslewFit");
-  TimeSlewPulse_HE->ProfileY("HEFit Y Profile",1,-1,"dos")->Fit("timeslewFit");
+  TimeSlewPulse_HB->ProfileY("HBFit Y Profile",1,-1,"do")->Fit("timeslewFit");
+  TimeSlewPulse_HE->ProfileY("HEFit Y Profile",1,-1,"do")->Fit("timeslewFit");
+
+        for(int i = 0; i < 59; i++){
+                for(int j = 0; j < 72; j++){
+                        for(int k = 0; k < 3; k++){
+				chtimeslewFit = new TF1("chtimeslewFit", "(x<500)*([0]+[1]*x) + (x>=500)*([2])",0.,1000.);
+				chtimeslewFit->SetParameters(9.88222e-01,-1.15620e-02,-4.17952e+00);
+                                TimeSlewPulse[i][j][k]->ProfileY("Y Profile",1,-1,"do")->Fit("chtimeslewFit");
+
+                                Par0[k]->SetBinContent(i+1, j+1, chtimeslewFit->GetParameter(0));
+                                Par1[k]->SetBinContent(i+1, j+1, chtimeslewFit->GetParameter(1));
+				Par2[k]->SetBinContent(i+1, j+1, chtimeslewFit->GetParameter(2));
+
+                                std::cout<< i << " " << j << " " << k << " " << chtimeslewFit->GetParameter(0) << " " << chtimeslewFit->GetParameter(1) << " " << chtimeslewFit->GetParameter(2) << std::endl;
+                                gDirectory->Delete("chtimeslewFit");
+                        }
+                }
+        }
+  for(int k = 0; k < 3; k++){
+    Par0[k]->Write();
+    Par1[k]->Write();
+    Par2[k]->Write();
+  }
 
   fTSP->cd();
   fTSP->Write();

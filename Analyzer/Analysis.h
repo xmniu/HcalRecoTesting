@@ -55,12 +55,19 @@ class Analysis : public analysistree
   float Threshold;
   float Quantile;
 
+//For time slew parametrization only
   TH2F *TimeSlewPulse_All;
   TH2F *TimeSlewPulse_HB;
   TH2F *TimeSlewPulse_HE;
 
   TF1 *slewFit;
   TF1 *timeslewFit;
+  TF1 *chtimeslewFit;
+
+  TH2F *TimeSlewPulse[59][72][3];
+  TH2F *Par0[3];
+  TH2F *Par1[3];
+  TH2F *Par2[3];
 
   Analysis(TTree *tree);
   ~Analysis();
